@@ -804,7 +804,8 @@ export default function App() {
             setProjectStart(d);
             triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, d, projectEnd);
           }}
-          projectEnd={(d) => {
+          projectEnd={projectEnd}
+          setProjectEnd={(d) => {
             setProjectEnd(d);
             triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, projectStart, d);
           }}

@@ -12,4 +12,5 @@ export const db = (firebaseConfig as any).firestoreDatabaseId
   ? getFirestore(app, (firebaseConfig as any).firestoreDatabaseId)
   : getFirestore(app);
 
+// Connection initialized
 export default app;
