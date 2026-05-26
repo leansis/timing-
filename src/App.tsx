@@ -72,6 +72,7 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [footerHeight, setFooterHeight] = useState(380);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Listen to Firebase sign-in state
   useEffect(() => {
@@ -561,7 +562,7 @@ export default function App() {
       <header className="h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex items-center justify-between px-6 z-10 select-none shadow-lg">
         {/* Logo and project name input */}
         <div className="flex items-center gap-6 flex-1 min-w-0 pr-6">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-lg shadow-orange-700/20 transform hover:-rotate-3 transition-transform">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-md">
             <Sparkles size={16} />
             <span>SGS TIMING v1.0.1</span>
           </div>
@@ -580,7 +581,7 @@ export default function App() {
               }}
               onSubmit={() => triggerCloudSave(projectTitle)}
               placeholder="Mi Proyecto de Timing"
-              className="bg-transparent border-none text-[15px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate hover:bg-slate-800/40 rounded px-2 -ml-2"
+              className="bg-transparent border-none text-[15px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate border-b border-transparent focus:border-slate-700 rounded px-2 -ml-2"
             />
           </div>
 
@@ -674,7 +675,7 @@ export default function App() {
                   signOut(auth);
                 }
               }}
-              className="p-2.5 bg-slate-800 hover:bg-red-900 hover:text-white text-slate-300 rounded-xl transition-all"
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-xl transition-colors"
               title="Cerrar Desconectarse"
             >
               <LogOut size={16} />
@@ -688,21 +689,30 @@ export default function App() {
         <div className="flex-1 flex flex-col overflow-hidden" style={{ paddingBottom: footerHeight }}>
           <div className="flex-grow flex overflow-hidden">
             {/* Left Drawer Workspace Sidebar: Teammember / resource list panel */}
-            <aside className="w-[300px] shrink-0 border-r-2 border-slate-200 bg-white flex flex-col z-10 shadow-sm relative">
-              <div className="h-[54px] border-b border-slate-100 flex items-center justify-between px-6 bg-slate-50/50 shrink-0">
+            <aside className={`${isSidebarOpen ? 'w-[300px]' : 'w-0 border-r-0'} shrink-0 border-r-2 border-slate-200 bg-white flex flex-col z-10 shadow-sm relative transition-all duration-300 overflow-hidden`}>
+              <div className="h-[54px] border-b border-slate-100 flex items-center justify-between px-6 bg-slate-50/50 shrink-0 whitespace-nowrap overflow-hidden">
                 <div className="flex items-center gap-2">
                   <Users className="text-orange-600" size={16} />
                   <span className="text-[11px] font-black uppercase text-slate-900 tracking-wider">Equipo de Trabajo</span>
                 </div>
-                {!isClientView && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {!isClientView && (
+                    <button
+                      onClick={handleAddResource}
+                      className="p-2 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors"
+                      title="Añadir Recurso"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  )}
                   <button
-                    onClick={handleAddResource}
-                    className="p-2 bg-orange-50 text-orange-600 hover:bg-orange-100/70 border border-orange-100 rounded-xl transition-all"
-                    title="Añadir Recurso"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-2 text-slate-400 hover:text-slate-650 rounded-xl hover:bg-slate-100 transition-colors"
+                    title="Ocultar Panel"
                   >
-                    <Plus size={14} />
+                    <ChevronRight size={14} className="rotate-180" />
                   </button>
-                )}
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto divide-y divide-slate-100 custom-scrollbar p-4 space-y-4">
@@ -758,7 +768,7 @@ export default function App() {
                           {!isClientView && (
                             <button
                               onClick={() => handleRemoveResource(res.id)}
-                              className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                              className="p-2 text-slate-300 hover:text-red-500 rounded-xl transition-colors opacity-0 group-hover:opacity-100"
                               title="Retirar Recurso"
                             >
                               <Trash2 size={13} />
@@ -782,6 +792,8 @@ export default function App() {
               isRelativeTime={isRelativeTime}
               resources={resources}
               isClientView={isClientView}
+              isSidebarOpen={isSidebarOpen}
+              setIsSidebarOpen={setIsSidebarOpen}
             />
           </div>
         </div>

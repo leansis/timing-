@@ -60,7 +60,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="w-full max-w-md p-8 relative z-10">
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/20 p-8 space-y-8 animate-in fade-in zoom-in duration-500">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-orange-200 mb-4 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+            <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-md mb-4">
               <LogIn className="text-white" size={32} />
             </div>
             <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Acceso Timing</h1>
@@ -108,14 +108,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-md hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   Entrar
-                  <LogIn size={16} className="group-hover:translate-x-1 transition-transform" />
+                  <LogIn size={16} />
                 </>
               )}
             </button>

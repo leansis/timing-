@@ -3,7 +3,7 @@ import { GanttTask, ProjectResource, ViewMode } from '@/src/types';
 import { PIXELS_PER_DAY } from '@/src/constants';
 import {
   Plus, Trash2, Calendar, User, ArrowRight, BookOpen, Clock,
-  ChevronUp, ChevronDown, CheckCircle2, AlertCircle, Edit3, Settings, HelpCircle
+  ChevronUp, ChevronDown, CheckCircle2, AlertCircle, Edit3, Settings, HelpCircle, Users
 } from 'lucide-react';
 
 interface GanttCanvasProps {
@@ -15,6 +15,8 @@ interface GanttCanvasProps {
   isRelativeTime: boolean;
   resources: ProjectResource[];
   isClientView?: boolean;
+  isSidebarOpen?: boolean;
+  setIsSidebarOpen?: (v: boolean) => void;
 }
 
 const ROW_HEIGHT = 56; // Fixed height in px for each task row
@@ -28,7 +30,9 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   projectEnd,
   isRelativeTime,
   resources,
-  isClientView = false
+  isClientView = false,
+  isSidebarOpen = true,
+  setIsSidebarOpen
 }) => {
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
@@ -406,6 +410,16 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
       {/* Upper action-controls bar */}
       <div className="h-14 px-6 border-b border-slate-100 bg-white flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
+          {setIsSidebarOpen && !isSidebarOpen && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="mr-2 p-1.5 hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-605 transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+              title="Mostrar Equipo de Trabajo"
+            >
+              <Users size={14} className="text-orange-600 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-wider">Equipo</span>
+            </button>
+          )}
           <BookOpen className="text-orange-600" size={18} />
           <h2 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.15em]">Gestión Plan de Trabajo</h2>
         </div>
@@ -421,7 +435,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Tasks spreadsheet panel */}
-        <div className="w-[450px] shrink-0 flex flex-col border-r border-slate-200 bg-white relative">
+        <div className="w-[310px] sm:w-[380px] md:w-[450px] shrink-0 flex flex-col border-r border-slate-200 bg-white relative transition-all duration-200 overflow-hidden">
           {/* Header Row */}
           <div
             className="flex items-center border-b-2 border-slate-200 bg-slate-50/70 shrink-0 font-black text-[10px] text-slate-500 uppercase tracking-wider px-3"
@@ -429,8 +443,8 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
           >
             <div className="w-12 text-center">WBS</div>
             <div className="flex-1 min-w-0 pr-4">Nombre de Tarea</div>
-            <div className="w-20">Fechas</div>
-            <div className="w-16">Resp.</div>
+            <div className="w-20 hidden sm:block">Fechas</div>
+            <div className="w-16 hidden sm:block">Resp.</div>
             <div className="w-12 text-center">Acciones</div>
           </div>
 
@@ -454,7 +468,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                   <div
                     key={task.id}
                     onClick={() => setSelectedTaskId(task.id)}
-                    className={`flex items-center px-3 group transition-colors cursor-pointer ${isSelected ? 'bg-orange-50/40 border-l-4 border-orange-600 pl-[8px]' : 'hover:bg-slate-50'
+                    className={`flex items-center px-3 group transition-colors cursor-pointer ${isSelected ? 'bg-slate-50 border-l-4 border-orange-600 pl-[8px]' : 'hover:bg-slate-50/30'
                       }`}
                     style={{ height: ROW_HEIGHT }}
                   >
@@ -482,13 +496,13 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                     </div>
 
                     {/* Brief date / details text */}
-                    <div className="w-20 text-[10px] font-extrabold text-slate-500">
+                    <div className="w-20 text-[10px] font-extrabold text-slate-500 hidden sm:block">
                       <div>{new Date(task.start).toLocaleDateString('es-ES', { month: '2-digit', day: 'numeric' })}</div>
                       <div className="text-[9px] text-orange-600 font-bold">-{new Date(task.end).toLocaleDateString('es-ES', { month: '2-digit', day: 'numeric' })}</div>
                     </div>
 
                     {/* Responsible label badge */}
-                    <div className="w-16">
+                    <div className="w-16 hidden sm:block">
                       {task.responsible ? (
                         <span className="text-[8px] font-black uppercase bg-slate-105 border border-slate-200 text-slate-600 py-1 px-1.5 rounded-md truncate block max-w-full text-center">
                           {task.responsible.substring(0, 7)}
@@ -592,7 +606,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
               return (
                 <div
                   key={`bg-row-${task.id}`}
-                  className={`absolute w-full flex items-center border-b border-dashed border-slate-100 group transition-colors ${isSelected ? 'bg-orange-50/20' : 'hover:bg-slate-50/40'
+                  className={`absolute w-full flex items-center border-b border-slate-100 group transition-colors ${isSelected ? 'bg-slate-50/50' : 'hover:bg-slate-50/20'
                     }`}
                   style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}
                 >
@@ -618,7 +632,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                       {/* Handle Left resize */}
                       {!isClientView && (
                         <div
-                          className="absolute left-0 top-0 bottom-0 w-2 hover:bg-white/40 cursor-w-resize rounded-l-xl z-30 transition-colors"
+                          className="absolute left-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-w-resize rounded-l-xl z-30 transition-colors"
                           onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-start'); }}
                         />
                       )}
@@ -642,7 +656,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                       {/* Handle Right resize */}
                       {!isClientView && (
                         <div
-                          className="absolute right-0 top-0 bottom-0 w-2 hover:bg-white/40 cursor-e-resize rounded-r-xl z-30 transition-colors"
+                          className="absolute right-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-e-resize rounded-r-xl z-30 transition-colors"
                           onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-end'); }}
                         />
                       )}

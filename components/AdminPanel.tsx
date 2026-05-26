@@ -234,8 +234,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         className={`absolute top-0 left-0 w-full h-1 cursor-row-resize z-50 hover:bg-orange-400 transition-colors ${isResizingHeight ? 'bg-orange-500 h-1.5 shadow-[0_0_15px_rgba(234,88,12,0.4)]' : 'bg-transparent'}`}
       />
 
-      <div className="h-12 px-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-30">
-        <div className="flex gap-10">
+      <div className="h-12 px-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-30 select-none overflow-x-auto no-scrollbar">
+        <div className="flex gap-6 md:gap-10 shrink-0">
           {(['Grid', 'Roles', 'Invoices', 'Settings'] as const).map(tab => (
             <button
               key={tab}
@@ -284,7 +284,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     resources.map(res => {
                       const resAllocs = allocations[res.id] || {};
                       return (
-                        <tr key={res.id} className="h-[75px] hover:bg-orange-50/5 transition-colors group">
+                        <tr key={res.id} className="h-[75px] hover:bg-slate-50/30 transition-colors group">
                           {gridColumns.map(col => {
                             const isReadOnly = viewMode !== 'Week';
                             let val = 0;
@@ -321,7 +321,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                     onChange={(e) => !isReadOnly && onUpdateAllocation(res.id, col.key, parseFloat(e.target.value) || 0)}
                                     className={`w-14 border-2 rounded-xl text-center text-[12px] font-black p-2 transition-all shadow-sm ${isReadOnly
                                       ? 'bg-slate-50 border-slate-50 text-slate-500 cursor-not-allowed'
-                                      : 'bg-white border-slate-100 text-slate-900 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 hover:border-slate-200'
+                                      : 'bg-white border-slate-100 text-slate-900 focus:ring-2 focus:ring-orange-600 focus:border-orange-600'
                                       }`}
                                   />
                                 </div>
@@ -407,7 +407,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         </button>
                       </div>
 
-                      <div className="bg-white p-8 rounded-3xl border-2 border-orange-100 shadow-xl shadow-orange-100/10">
+                      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm bg-white">
                         <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 p-6 bg-orange-50/50 rounded-2xl border border-orange-100">
                           <div className="flex-1">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Importe Total del Año {year} (€)</label>
@@ -529,7 +529,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {profileRates.map((rate, idx) => (
-                  <div key={idx} className="bg-white p-5 rounded-2xl border-2 border-slate-100 group relative hover:shadow-xl hover:border-orange-200 transition-all">
+                  <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 group relative transition-colors">
                     <div className="space-y-4">
                       <div>
                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Perfil</label>
@@ -578,7 +578,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Vista Tiempo</span>
                       <button
                         onClick={() => setIsRelativeTime(!isRelativeTime)}
-                        className="flex items-center gap-2 hover:scale-105 transition-transform"
+                        className="flex items-center gap-2 transition-colors"
                       >
                         {isRelativeTime ? (
                           <div className="flex items-center gap-2">
@@ -714,7 +714,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <Target size={16} className="text-orange-600" /> Inversión Total
                   </h3>
 
-                  <div className="bg-white p-10 rounded-[2.5rem] border-2 border-orange-100 shadow-xl shadow-orange-100/20 relative overflow-hidden group">
+                  <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
                       <DollarSign size={80} className="text-orange-600" />
                     </div>
