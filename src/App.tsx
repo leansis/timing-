@@ -70,7 +70,7 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [footerHeight, setFooterHeight] = useState(380);
+  const [footerHeight, setFooterHeight] = useState(300);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -559,16 +559,29 @@ export default function App() {
   return (
     <div className="h-screen w-full flex flex-col bg-[#f8fafc] overflow-hidden font-sans">
       {/* Top Navigation Cockpit Header */}
-      <header className="h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex items-center justify-between px-6 z-10 select-none shadow-lg">
+      <header className="h-[52px] shrink-0 border-b border-slate-700 bg-slate-900 text-white flex items-center justify-between px-5 z-10 select-none shadow-md">
         {/* Logo and project name input */}
-        <div className="flex items-center gap-6 flex-1 min-w-0 pr-6">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-md">
-            <Sparkles size={16} />
+        <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-600 rounded-lg font-bold text-xs tracking-tight shrink-0 shadow-sm">
+            <Sparkles size={13} />
             <span>SGS TIMING v1.0.1</span>
           </div>
 
-          <div className="flex items-center gap-3 max-w-sm flex-grow min-w-0">
-            <span className="text-slate-500 font-bold shrink-0">::</span>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors border shrink-0 ${
+              isSidebarOpen 
+                ? 'bg-orange-50/10 border-orange-500/20 text-orange-400' 
+                : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+            }`}
+            title={isSidebarOpen ? "Ocultar panel de equipo de trabajo" : "Mostrar panel de equipo de trabajo"}
+          >
+            <Users size={12} />
+            <span>Panel Equipo</span>
+          </button>
+
+          <div className="flex items-center gap-2 max-w-xs flex-grow min-w-0">
+            <span className="text-slate-600 font-bold shrink-0 text-xs">::</span>
             <input
               value={projectTitle}
               readOnly={isClientView}
@@ -581,17 +594,17 @@ export default function App() {
               }}
               onSubmit={() => triggerCloudSave(projectTitle)}
               placeholder="Mi Proyecto de Timing"
-              className="bg-transparent border-none text-[15px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate border-b border-transparent focus:border-slate-700 rounded px-2 -ml-2"
+              className="bg-transparent border-none text-[13px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate border-b border-transparent focus:border-slate-700 rounded px-1.5 -ml-1.5"
             />
           </div>
 
           {/* Project dropdown cloud selector */}
-          <div className="flex items-center gap-2 shrink-0 bg-slate-800/40 border border-slate-700/30 px-3 py-1.5 rounded-xl">
-            <FolderKanban size={14} className="text-orange-500" />
+          <div className="flex items-center gap-1.5 shrink-0 bg-slate-800/40 border border-slate-700/30 px-2.5 py-1 rounded-lg">
+            <FolderKanban size={13} className="text-orange-500" />
             <select
               value={currentProjectId || ''}
               onChange={(e) => setCurrentProjectId(e.target.value)}
-              className="bg-transparent border-none text-[11px] font-black focus:ring-0 cursor-pointer text-slate-200 p-0 pr-6 uppercase tracking-wider"
+              className="bg-transparent border-none text-[10px] font-black focus:ring-0 cursor-pointer text-slate-200 p-0 pr-5 uppercase tracking-wider"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id} className="bg-slate-900 text-white">
@@ -603,17 +616,17 @@ export default function App() {
             {!isClientView && (
               <button
                 onClick={handleAddNewProject}
-                className="p-1 hover:bg-slate-700/50 rounded-lg text-slate-300 hover:text-white transition-all ml-1"
+                className="p-1 hover:bg-slate-700/50 rounded text-slate-300 hover:text-white transition-all"
                 title="Nuevo Proyecto"
               >
-                <Plus size={14} />
+                <Plus size={12} />
               </button>
             )}
           </div>
 
           {/* Collaborator Badge Information */}
-          <div className="flex items-center gap-2 bg-slate-800/20 px-3 py-1.5 rounded-xl border border-slate-700/20 shrink-0">
-            <Activity size={12} className="text-emerald-400" />
+          <div className="flex items-center gap-1.5 bg-slate-800/20 px-2.5 py-1 rounded-lg border border-slate-700/20 shrink-0">
+            <Activity size={10} className="text-emerald-400" />
             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
               Rol: {activeRole === 'owner' ? 'Propietario' : activeRole === 'editor' ? 'Editor' : 'Lector'}
             </span>
