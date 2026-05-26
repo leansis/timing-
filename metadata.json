@@ -1,0 +1,6 @@
+{
+  "name": "Timing",
+  "description": "Sistema avanzado de planificación temporal en diagrama de Gantt, gestión de asignaciones de equipo y control presupuestario y de facturación.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

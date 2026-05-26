@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile metadata used to map and validate email and system logins.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique identifier of the authenticated user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user."
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "Timestamp indicating the last login."
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "CloudProject": {
+      "title": "CloudProject",
+      "description": "Advanced Gantt schedule, team assignments, budget control, and invoices.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Auth UID of the project owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the project."
+        },
+        "lastModified": {
+          "type": "string"
+        },
+        "collaboratorUids": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "description": "Nested object containing tasks, resources, allocations, billing rates, and config."
+        }
+      },
+      "required": ["ownerId", "title", "data"]
+    }
+  },
+  "firestore": {
+    "/users_meta/{userId}": {
+      "schema": "UserProfile",
+      "description": "Public user profiles for mapping user emails."
+    },
+    "/projects/{projectId}": {
+      "schema": "CloudProject",
+      "description": "Shared project records including schedule, members, and financial configs."
+    }
+  }
+}

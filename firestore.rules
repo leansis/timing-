@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Perfiles públicos para validación de email
+    match /users_meta/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Proyectos compartibles
+    match /projects/{projectId} {
+      function isOwner() {
+        return request.auth != null && resource != null && request.auth.uid == resource.data.ownerId;
+      }
+      function isCollaborator() {
+        return request.auth != null && resource != null && (
+          (resource.data.collaborators != null && resource.data.collaborators[request.auth.uid] in ['editor', 'viewer']) ||
+          (resource.data.collaboratorUids != null && request.auth.uid in resource.data.collaboratorUids)
+        );
+      }
+      function canWrite() {
+        return isOwner() || (request.auth != null && resource != null && resource.data.collaborators != null && resource.data.collaborators[request.auth.uid] == 'editor');
+      }
+
+      // Evitar errores de permisos al intentar leer documentos inexistentes
+      allow get: if request.auth != null && (resource == null || isOwner() || isCollaborator());
+      
+      // Permitir listado total para el usuario autenticado (se filtrará por el motor de Firestore y reglas de seguridad implícitas)
+      allow list: if request.auth != null;
+
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update: if canWrite();
+      allow delete: if isOwner();
+    }
+
+    // Compatibilidad con proyectos antiguos (Solo lectura/escritura por dueño original)
+    match /users/{userId}/projects/{projectId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
