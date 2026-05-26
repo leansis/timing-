@@ -19,8 +19,8 @@ interface GanttCanvasProps {
   setIsSidebarOpen?: (v: boolean) => void;
 }
 
-const ROW_HEIGHT = 42; // Fixed height in px for each task row
-const TIMELINE_HEADER_HEIGHT = 44;
+const ROW_HEIGHT = 56; // Fixed height in px for each task row
+const TIMELINE_HEADER_HEIGHT = 54;
 
 export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   viewMode,
@@ -377,7 +377,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
           pathStr = `M ${predEndX} ${predY} L ${midX} ${predY} L ${midX} ${taskY} L ${taskStartX} ${taskY}`;
         } else {
           // Overlapped successor: backward step around
-          const offsetPredY = predY + 9;
+          const offsetPredY = predY + 12;
           pathStr = `M ${predEndX} ${predY} L ${predEndX + 10} ${predY} L ${predEndX + 10} ${offsetPredY} L ${taskStartX - 10} ${offsetPredY} L ${taskStartX - 10} ${taskY} L ${taskStartX} ${taskY}`;
         }
 
@@ -614,14 +614,14 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                   {barWidth > 0 && (
                     <div
                       style={{ left: xStart, width: barWidth }}
-                      className={`absolute h-[26px] rounded-lg z-20 flex items-center shadow-md transition-all group/bar select-none ${isSelected
-                        ? 'ring-1 ring-orange-500 shadow-sm'
+                      className={`absolute h-8 rounded-xl z-20 flex items-center shadow-lg transition-all group/bar select-none ${isSelected
+                        ? 'ring-2 ring-orange-500 shadow-orange-100'
                         : ''
                         } ${isClientView ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
                       onMouseDown={(e) => handleDragStart(e, task.id, 'move')}
                     >
                       {/* Bar Fill Backdrop */}
-                      <div className="absolute inset-0 bg-slate-900 rounded-lg overflow-hidden shadow-inner flex items-center">
+                      <div className="absolute inset-0 bg-slate-900 rounded-xl overflow-hidden shadow-inner flex items-center">
                         {/* Progress Colored Fill */}
                         <div
                           style={{ width: `${task.progress}%` }}
@@ -632,7 +632,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                       {/* Handle Left resize */}
                       {!isClientView && (
                         <div
-                          className="absolute left-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-w-resize rounded-l-lg z-30 transition-colors"
+                          className="absolute left-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-w-resize rounded-l-xl z-30 transition-colors"
                           onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-start'); }}
                         />
                       )}
@@ -656,7 +656,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                       {/* Handle Right resize */}
                       {!isClientView && (
                         <div
-                          className="absolute right-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-e-resize rounded-r-lg z-30 transition-colors"
+                          className="absolute right-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-e-resize rounded-r-xl z-30 transition-colors"
                           onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-end'); }}
                         />
                       )}

@@ -258,16 +258,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="inline-block min-w-full align-middle">
               <table className="text-left border-collapse table-fixed">
                 <thead className="sticky top-0 z-30">
-                  <tr className="h-[38px] bg-slate-100">
+                  <tr className="h-[54px]">
                     {gridColumns.map(col => (
                       <th
                         key={col.index}
-                        className="px-1 text-[10px] font-black text-slate-800 text-center border-b border-r border-slate-200"
+                        className="px-1 text-[11px] font-black text-slate-800 text-center border-b-2 border-r border-slate-200 bg-slate-100/50"
                         style={{ width: columnWidth, minWidth: columnWidth }}
                       >
-                        <div className="flex flex-col items-center justify-center leading-tight">
-                          {col.subLabel && <span className="text-[7.5px] text-orange-650 font-black uppercase tracking-tighter">{col.subLabel}</span>}
-                          <span className="text-[11px]">{col.label}</span>
+                        <div className="flex flex-col items-center">
+                          {col.subLabel && <span className="text-[8px] text-orange-600 font-black mb-1 uppercase tracking-tighter">{col.subLabel}</span>}
+                          <span className="text-[12px]">{col.label}</span>
                         </div>
                       </th>
                     ))}
@@ -276,7 +276,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 <tbody className="divide-y divide-slate-100">
                   {resources.length === 0 ? (
                     <tr>
-                      <td colSpan={gridColumns.length} className="p-10 text-center text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">
+                      <td colSpan={gridColumns.length} className="p-16 text-center text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">
                         No hay recursos definidos en la barra lateral.
                       </td>
                     </tr>
@@ -284,7 +284,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     resources.map(res => {
                       const resAllocs = allocations[res.id] || {};
                       return (
-                        <tr key={res.id} className="h-[50px] hover:bg-slate-50/30 transition-colors group">
+                        <tr key={res.id} className="h-[75px] hover:bg-slate-50/30 transition-colors group">
                           {gridColumns.map(col => {
                             const isReadOnly = viewMode !== 'Week';
                             let val = 0;
@@ -311,7 +311,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                             }
 
                             return (
-                              <td key={col.index} className="px-1 py-1 border-r border-slate-100" style={{ width: columnWidth }}>
+                              <td key={col.index} className="px-1 py-2 border-r border-slate-50" style={{ width: columnWidth }}>
                                 <div className="flex justify-center">
                                   <input
                                     type="number" min="0" max="1000" step="0.5"
@@ -319,9 +319,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                     placeholder="0"
                                     readOnly={isReadOnly}
                                     onChange={(e) => !isReadOnly && onUpdateAllocation(res.id, col.key, parseFloat(e.target.value) || 0)}
-                                    className={`w-12 h-7 border rounded-lg text-center text-[11px] font-black p-1 transition-all shadow-sm ${isReadOnly
-                                      ? 'bg-slate-50 border-transparent text-slate-400 cursor-not-allowed shadow-none'
-                                      : 'bg-white border-slate-200 text-slate-900 focus:ring-1 focus:ring-orange-500 focus:border-orange-500'
+                                    className={`w-14 border-2 rounded-xl text-center text-[12px] font-black p-2 transition-all shadow-sm ${isReadOnly
+                                      ? 'bg-slate-50 border-slate-50 text-slate-500 cursor-not-allowed'
+                                      : 'bg-white border-slate-100 text-slate-900 focus:ring-2 focus:ring-orange-600 focus:border-orange-600'
                                       }`}
                                   />
                                 </div>
