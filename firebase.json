@@ -1,6 +1,6 @@
 {
     "hosting": {
-        "site": "tickets-50189",
+        "site": "timing-40e79",
         "public": "dist",
         "ignore": [
             "firebase.json",
