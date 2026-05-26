@@ -559,16 +559,17 @@ export default function App() {
   return (
     <div className="h-screen w-full flex flex-col bg-[#f8fafc] overflow-hidden font-sans">
       {/* Top Navigation Cockpit Header */}
-      <header className="h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex items-center justify-between px-6 z-10 select-none shadow-lg">
+      <header className="h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex items-center justify-between px-3 md:px-6 z-10 select-none shadow-lg">
         {/* Logo and project name input */}
-        <div className="flex items-center gap-6 flex-1 min-w-0 pr-6">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-md">
+        <div className="flex items-center gap-3 md:gap-6 flex-1 min-w-0 pr-2 md:pr-6">
+          <div className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-md">
             <Sparkles size={16} />
-            <span>SGS TIMING v1.0.1</span>
+            <span className="hidden sm:inline">SGS TIMING v1.0.1</span>
+            <span className="inline sm:hidden text-xs font-black">SGS</span>
           </div>
 
-          <div className="flex items-center gap-3 max-w-sm flex-grow min-w-0">
-            <span className="text-slate-500 font-bold shrink-0">::</span>
+          <div className="flex items-center gap-1.5 md:gap-3 max-w-sm flex-grow min-w-0">
+            <span className="text-slate-500 font-bold shrink-0 hidden xs:inline">::</span>
             <input
               value={projectTitle}
               readOnly={isClientView}
@@ -581,63 +582,64 @@ export default function App() {
               }}
               onSubmit={() => triggerCloudSave(projectTitle)}
               placeholder="Mi Proyecto de Timing"
-              className="bg-transparent border-none text-[15px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate border-b border-transparent focus:border-slate-700 rounded px-2 -ml-2"
+              className="bg-transparent border-none text-xs sm:text-[15px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate border-b border-transparent focus:border-slate-700 rounded px-1 -ml-1 sm:px-2 sm:-ml-2"
             />
           </div>
 
           {/* Project dropdown cloud selector */}
-          <div className="flex items-center gap-2 shrink-0 bg-slate-800/40 border border-slate-700/30 px-3 py-1.5 rounded-xl">
-            <FolderKanban size={14} className="text-orange-500" />
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 bg-slate-800/40 border border-slate-700/30 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl">
+            <FolderKanban size={13} className="text-orange-500" />
             <select
               value={currentProjectId || ''}
               onChange={(e) => setCurrentProjectId(e.target.value)}
-              className="bg-transparent border-none text-[11px] font-black focus:ring-0 cursor-pointer text-slate-200 p-0 pr-6 uppercase tracking-wider"
+              className="bg-transparent border-none text-[10px] sm:text-[11px] font-black focus:ring-0 cursor-pointer text-slate-200 p-0 pr-4 sm:pr-6 uppercase tracking-wider"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                   {p.title.toUpperCase()}
                 </option>
               ))}
-              {projects.length === 0 && <option value="">Crear Proyecto...</option>}
+              {projects.length === 0 && <option value="">Crear...</option>}
             </select>
             {!isClientView && (
               <button
                 onClick={handleAddNewProject}
-                className="p-1 hover:bg-slate-700/50 rounded-lg text-slate-300 hover:text-white transition-all ml-1"
+                className="p-1 hover:bg-slate-700/50 rounded-lg text-slate-300 hover:text-white transition-colors ml-0.5"
                 title="Nuevo Proyecto"
               >
-                <Plus size={14} />
+                <Plus size={13} />
               </button>
             )}
           </div>
 
           {/* Collaborator Badge Information */}
-          <div className="flex items-center gap-2 bg-slate-800/20 px-3 py-1.5 rounded-xl border border-slate-700/20 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-800/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-700/20 shrink-0">
             <Activity size={12} className="text-emerald-400" />
             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-              Rol: {activeRole === 'owner' ? 'Propietario' : activeRole === 'editor' ? 'Editor' : 'Lector'}
+              <span className="hidden md:inline">Rol: </span>
+              {activeRole === 'owner' ? 'Propietario' : activeRole === 'editor' ? 'Editor' : 'Lector'}
             </span>
           </div>
         </div>
 
         {/* Sync, Share, and Sign-out Actions */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {/* Cloud Saving indicators */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {isSaving ? (
               <div className="flex items-center gap-1.5 text-orange-400 text-[10px] font-black uppercase tracking-wider">
                 <Cloud className="animate-bounce" size={14} />
-                <span>Sincronizando...</span>
+                <span className="hidden md:inline">Sincronizando...</span>
               </div>
             ) : saveError ? (
               <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-black uppercase tracking-wider" title={saveError}>
                 <AlertTriangle size={14} />
-                <span>Error G.</span>
+                <span className="hidden md:inline">Error G.</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-black uppercase tracking-wider">
                 <CheckCircle size={14} />
-                <span>Guardado</span>
+                <span className="hidden md:inline">Guardado</span>
               </div>
             )}
           </div>
@@ -645,29 +647,36 @@ export default function App() {
           {!isClientView && currentProjectId && (
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl text-[10px] font-black transition-all uppercase tracking-wider shadow-sm shrink-0"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl text-[10px] font-black transition-colors uppercase tracking-wider shadow-sm shrink-0"
+              title="Compartir Proyecto"
             >
-              <Share2 size={14} className="text-orange-500" /> Compartir ({collaboratorUids.length})
+              <Share2 size={13} className="text-orange-500" />
+              <span className="hidden sm:inline">Compartir </span>
+              <span>({collaboratorUids.length})</span>
             </button>
           )}
 
           {currentProjectId && activeRole === 'owner' && (
             <button
               onClick={handleDeleteCurrentProject}
-              className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-all"
+              className="p-2 ml-1 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-all"
               title="Eliminar Proyecto"
             >
-              <Trash2 size={16} />
+              <Trash2 size={15} />
             </button>
           )}
 
-          <div className="h-6 w-px bg-slate-800" />
+          <div className="h-6 w-px bg-slate-800 mx-1" />
 
           {/* User Profile Avatar block */}
-          <div className="flex items-center gap-3 pl-2">
-            <div className="flex flex-col text-right hidden md:block">
-              <span className="text-[10px] font-black truncate max-w-[120px] tracking-tight">{user.email}</span>
-              <span className="text-[8px] font-extrabold text-orange-500 uppercase tracking-widest">SGS Staff</span>
+          <div className="flex items-center gap-2.5 pl-1 min-w-0 max-w-[180px]">
+            <div className="hidden md:flex flex-col text-right justify-center min-w-0">
+              <div className="text-[10px] font-black truncate max-w-[130px] tracking-tight leading-none text-slate-300 mb-1" title={user.email}>
+                {user.email}
+              </div>
+              <div className="text-[8px] font-extrabold text-orange-500 uppercase tracking-widest leading-none block">
+                SGS Staff
+              </div>
             </div>
             <button
               onClick={() => {
@@ -675,10 +684,10 @@ export default function App() {
                   signOut(auth);
                 }
               }}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-xl transition-colors"
+              className="p-2 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-xl transition-colors shrink-0"
               title="Cerrar Desconectarse"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
             </button>
           </div>
         </div>
