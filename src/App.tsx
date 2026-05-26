@@ -563,7 +563,7 @@ export default function App() {
         <div className="flex items-center gap-6 flex-1 min-w-0 pr-6">
           <div className="flex items-center gap-2 px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-lg shadow-orange-700/20 transform hover:-rotate-3 transition-transform">
             <Sparkles size={16} />
-            <span>SGS TIMING</span>
+            <span>SGS TIMING v1.0.1</span>
           </div>
 
           <div className="flex items-center gap-3 max-w-sm flex-grow min-w-0">
