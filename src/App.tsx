@@ -559,17 +559,17 @@ export default function App() {
   return (
     <div className="h-screen w-full flex flex-col bg-[#f8fafc] overflow-hidden font-sans">
       {/* Top Navigation Cockpit Header */}
-      <header className="h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex items-center justify-between px-3 md:px-6 z-10 select-none shadow-lg">
+      <header className="min-h-[64px] py-3 lg:py-0 lg:h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex flex-col lg:flex-row items-stretch lg:items-center justify-between px-3 md:px-6 z-10 select-none shadow-lg gap-3 lg:gap-0">
         {/* Logo and project name input */}
-        <div className="flex items-center gap-3 md:gap-6 flex-1 min-w-0 pr-2 md:pr-6">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 pr-0 lg:pr-6 justify-between lg:justify-start">
           <div className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-md">
             <Sparkles size={16} />
-            <span className="hidden sm:inline">SGS TIMING v1.0.1</span>
-            <span className="inline sm:hidden text-xs font-black">SGS</span>
+            <span className="hidden xs:inline">SGS TIMING v1.0.1</span>
+            <span className="inline xs:hidden text-xs font-black">SGS</span>
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-3 max-w-sm flex-grow min-w-0">
-            <span className="text-slate-500 font-bold shrink-0 hidden xs:inline">::</span>
+            <span className="text-slate-500 font-bold shrink-0 hidden sm:inline">::</span>
             <input
               value={projectTitle}
               readOnly={isClientView}
@@ -616,30 +616,30 @@ export default function App() {
           <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-800/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-700/20 shrink-0">
             <Activity size={12} className="text-emerald-400" />
             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-              <span className="hidden md:inline">Rol: </span>
+              <span className="hidden sm:inline">Rol: </span>
               {activeRole === 'owner' ? 'Propietario' : activeRole === 'editor' ? 'Editor' : 'Lector'}
             </span>
           </div>
         </div>
 
         {/* Sync, Share, and Sign-out Actions */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0 justify-between lg:justify-end border-t border-slate-800/30 pt-2 lg:pt-0 lg:border-t-0">
           {/* Cloud Saving indicators */}
           <div className="flex items-center gap-1.5">
             {isSaving ? (
               <div className="flex items-center gap-1.5 text-orange-400 text-[10px] font-black uppercase tracking-wider">
                 <Cloud className="animate-bounce" size={14} />
-                <span className="hidden md:inline">Sincronizando...</span>
+                <span>Sincronizando...</span>
               </div>
             ) : saveError ? (
               <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-black uppercase tracking-wider" title={saveError}>
                 <AlertTriangle size={14} />
-                <span className="hidden md:inline">Error G.</span>
+                <span>Error G.</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-black uppercase tracking-wider">
                 <CheckCircle size={14} />
-                <span className="hidden md:inline">Guardado</span>
+                <span>Guardado</span>
               </div>
             )}
           </div>
@@ -651,8 +651,7 @@ export default function App() {
               title="Compartir Proyecto"
             >
               <Share2 size={13} className="text-orange-500" />
-              <span className="hidden sm:inline">Compartir </span>
-              <span>({collaboratorUids.length})</span>
+              <span>Compartir ({collaboratorUids.length})</span>
             </button>
           )}
 
@@ -666,12 +665,12 @@ export default function App() {
             </button>
           )}
 
-          <div className="h-6 w-px bg-slate-800 mx-1" />
+          <div className="h-6 w-px bg-slate-800 mx-1 hidden xs:block" />
 
           {/* User Profile Avatar block */}
-          <div className="flex items-center gap-2.5 pl-1 min-w-0 max-w-[180px]">
-            <div className="hidden md:flex flex-col text-right justify-center min-w-0">
-              <div className="text-[10px] font-black truncate max-w-[130px] tracking-tight leading-none text-slate-300 mb-1" title={user.email}>
+          <div className="flex items-center gap-2.5 pl-1 min-w-0 max-w-[200px]">
+            <div className="flex flex-col text-right justify-center min-w-0">
+              <div className="text-[10px] font-black truncate max-w-[100px] xs:max-w-[125px] sm:max-w-[150px] tracking-tight leading-none text-slate-300 mb-1" title={user.email}>
                 {user.email}
               </div>
               <div className="text-[8px] font-extrabold text-orange-500 uppercase tracking-widest leading-none block">
