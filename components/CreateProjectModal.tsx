@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FolderKanban, Sparkles, Loader2 } from 'lucide-react';
+import { X, FolderKanban, Loader2 } from 'lucide-react';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -76,9 +76,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               Nombre de la Planificación / Proyecto
             </label>
             <div className="relative group">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                <Sparkles size={16} />
-              </div>
               <input
                 type="text"
                 value={projectTitle}
@@ -88,7 +85,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 }}
                 placeholder="PROYECTO TIMING"
                 required
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl text-[13px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-sans"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl text-[13px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-sans"
               />
             </div>
             <p className="text-[9px] text-slate-400 font-medium italic mt-1 leading-relaxed">
