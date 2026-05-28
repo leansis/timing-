@@ -12,6 +12,7 @@ export interface GanttTask {
   dependencies?: string[]; // IDs of tasks that must finish before this starts
   notes?: string;
   durationDays?: number;
+  color?: string; // Hex color or named Tailwind color preset
 }
 
 export interface ProjectResource {

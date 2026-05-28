@@ -114,7 +114,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       let subLabel = "";
 
       if (viewMode === 'Week') {
-        const relativeMonthIndex = Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1;
+        const relativeMonthIndex = Math.max(1, Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1);
         const target = new Date(d.valueOf());
         const dayNr = (d.getDay() + 6) % 7;
         target.setDate(target.getDate() - dayNr + 3);
@@ -123,15 +123,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
         const weekNumber = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
 
-        label = `S${weekNumber}`;
-        subLabel = isRelativeTime ? `M${relativeMonthIndex}` : d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+        if (isRelativeTime) {
+          label = `S${index + 1}`;
+          subLabel = `M${relativeMonthIndex}`;
+        } else {
+          label = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase();
+          subLabel = `S${weekNumber}`;
+        }
       } else if (viewMode === 'Month') {
-        const relativeMonthIndex = Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1;
-        label = isRelativeTime ? `M${relativeMonthIndex}` : d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
-        subLabel = d.getFullYear().toString();
+        const relativeMonthIndex = index + 1;
+        const relativeYearIndex = Math.floor(index / 12) + 1;
+        if (isRelativeTime) {
+          label = `M${relativeMonthIndex}`;
+          subLabel = `AÑO ${relativeYearIndex}`;
+        } else {
+          label = d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+          subLabel = d.getFullYear().toString();
+        }
       } else {
-        const relativeYearIndex = Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 365)) + 1;
-        label = isRelativeTime ? `AÑO ${relativeYearIndex}` : d.getFullYear().toString();
+        const relativeYearIndex = index + 1;
+        if (isRelativeTime) {
+          label = `AÑO ${relativeYearIndex}`;
+          subLabel = "";
+        } else {
+          label = d.getFullYear().toString();
+          subLabel = "";
+        }
       }
 
       const getMon = (date: Date) => {
@@ -603,8 +620,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                           <CalendarIcon size={16} className="text-orange-600 shrink-0" />
                           <input
                             type="date"
-                            value={projectStart.toISOString().split('T')[0]}
-                            onChange={(e) => setProjectStart(new Date(e.target.value))}
+                            value={(() => {
+                              try {
+                                return projectStart && !isNaN(projectStart.getTime()) ? projectStart.toISOString().split('T')[0] : '';
+                              } catch {
+                                return '';
+                              }
+                            })()}
+                            onChange={(e) => {
+                              const d = new Date(e.target.value);
+                              if (!isNaN(d.getTime())) {
+                                setProjectStart(d);
+                              }
+                            }}
                             className="bg-transparent border-none text-[12px] font-black text-slate-900 p-0 focus:ring-0 w-full"
                           />
                         </div>
@@ -618,8 +646,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                           <CalendarIcon size={16} className="text-orange-600 shrink-0" />
                           <input
                             type="date"
-                            value={projectEnd.toISOString().split('T')[0]}
-                            onChange={(e) => setProjectEnd(new Date(e.target.value))}
+                            value={(() => {
+                              try {
+                                return projectEnd && !isNaN(projectEnd.getTime()) ? projectEnd.toISOString().split('T')[0] : '';
+                              } catch {
+                                return '';
+                              }
+                            })()}
+                            onChange={(e) => {
+                              const d = new Date(e.target.value);
+                              if (!isNaN(d.getTime())) {
+                                setProjectEnd(d);
+                              }
+                            }}
                             className="bg-transparent border-none text-[12px] font-black text-slate-900 p-0 focus:ring-0 w-full"
                           />
                         </div>

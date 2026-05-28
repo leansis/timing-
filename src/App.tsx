@@ -22,17 +22,139 @@ import {
 
 import Login from '@/components/Login';
 import ShareModal from '@/components/ShareModal';
-import AdminPanel from '@/components/AdminPanel';
+import CreateProjectModal from '@/components/CreateProjectModal';
 import GanttCanvas from '@/components/GanttCanvas';
+import { AsignacionPanel } from '@/components/AsignacionPanel';
+import { PerfilesPanel } from '@/components/PerfilesPanel';
+import { FacturacionPanel } from '@/components/FacturacionPanel';
+import { ConfiguracionPanel } from '@/components/ConfiguracionPanel';
+import { EquipoPanel } from '@/components/EquipoPanel';
 
 import {
   Cloud, CloudLightning, LogOut, FolderKanban, Plus, Trash2,
   Share2, Save, Sparkles, Code2, Users, HardDriveUpload, Download,
-  CheckCircle, Hammer, ChevronRight, Activity, AlertTriangle
+  CheckCircle, Hammer, ChevronLeft, ChevronRight, Activity, AlertTriangle,
+  Calendar, DollarSign, Settings2, FileSpreadsheet, ListCollapse
 } from 'lucide-react';
 
-const DEFAULT_PROJECT_START = '2026-05-18';
-const DEFAULT_PROJECT_END = '2026-11-20';
+const getMondayOfNextWeek = (): string => {
+  const today = new Date();
+  const day = today.getDay();
+  const daysToNextMonday = day === 0 ? 1 : 8 - day;
+  const nextMonday = new Date(today);
+  nextMonday.setDate(today.getDate() + daysToNextMonday);
+  return nextMonday.toISOString().split('T')[0];
+};
+
+const getSixMonthsAfter = (startDateStr: string): string => {
+  const d = new Date(startDateStr);
+  d.setMonth(d.getMonth() + 6);
+  return d.toISOString().split('T')[0];
+};
+
+const DEFAULT_PROJECT_START = getMondayOfNextWeek();
+const DEFAULT_PROJECT_END = getSixMonthsAfter(DEFAULT_PROJECT_START);
+
+const safeIsoString = (d: Date | undefined | null, fallback: string): string => {
+  if (!d || isNaN(d.getTime())) return fallback;
+  try {
+    return d.toISOString().split('T')[0];
+  } catch {
+    return fallback;
+  }
+};
+
+export const recalculateWBS = (tasksList: GanttTask[]): GanttTask[] => {
+  if (!tasksList || tasksList.length === 0) return tasksList;
+
+  const currentIndices: number[] = [];
+  return tasksList.map(task => {
+    const wbsStr = task.wbs || '1';
+    const depth = wbsStr.split('.').length - 1;
+
+    if (currentIndices.length > depth + 1) {
+      currentIndices.length = depth + 1;
+    }
+
+    for (let d = 0; d < depth; d++) {
+      if (currentIndices[d] === undefined || currentIndices[d] === 0) {
+        currentIndices[d] = 1;
+      }
+    }
+
+    currentIndices[depth] = (currentIndices[depth] || 0) + 1;
+    const newWbs = currentIndices.slice(0, depth + 1).join('.');
+
+    let newName = task.name;
+    const taskRegex = /^(Nueva Tarea|Hito: Entrega Clave|Capítulo|CAPÍTULO)\s+\d+(\.\d+)*(.*)$/i;
+    if (taskRegex.test(task.name)) {
+      const chMatch = task.name.match(/^(Capítulo|CAPÍTULO)\s+\d+(\.\d+)*\s*:\s*(.*)$/i);
+      if (chMatch) {
+         newName = `${chMatch[1].toUpperCase()} ${newWbs}: ${chMatch[3]}`;
+      } else {
+         const genMatch = task.name.match(/^(Nueva Tarea|Hito: Entrega Clave|Capítulo|CAPÍTULO)\s+\d+(\.\d+)*(.*)$/i);
+         if (genMatch) {
+           newName = `${genMatch[1]} ${newWbs}${genMatch[3]}`;
+         }
+      }
+    }
+
+    return {
+      ...task,
+      wbs: newWbs,
+      name: newName
+    };
+  });
+};
+
+export const computeRollupTasks = (rawTasks: GanttTask[]): GanttTask[] => {
+  if (!rawTasks || rawTasks.length === 0) return rawTasks;
+
+  return rawTasks.map(task => {
+    const wbsVal = task.wbs || '';
+    if (!wbsVal) return task;
+
+    const prefix = `${wbsVal}.`;
+    const subtasks = rawTasks.filter(t => t && t.wbs && t.wbs.startsWith(prefix));
+
+    if (subtasks.length === 0) {
+      return task;
+    }
+
+    // Leaf descendants of this project item
+    const leafDescendants = subtasks.filter(st => {
+      const stPrefix = `${st.wbs}.`;
+      return !rawTasks.some(other => other && other.wbs && other.wbs.startsWith(stPrefix));
+    });
+
+    const validDescendants = leafDescendants.length > 0 ? leafDescendants : subtasks;
+
+    const starts = validDescendants
+      .map(st => st.start)
+      .filter((s): s is string => !!s && !isNaN(new Date(s).getTime()));
+
+    const ends = validDescendants
+      .map(st => st.end)
+      .filter((e): e is string => !!e && !isNaN(new Date(e).getTime()));
+
+    const minStart = starts.length > 0 ? starts.reduce((min, s) => s < min ? s : min) : task.start;
+    const maxEnd = ends.length > 0 ? ends.reduce((max, e) => e > max ? e : max) : task.end;
+
+    let avgProgress = task.progress || 0;
+    const progresses = validDescendants.map(st => st.progress ?? 0);
+    if (progresses.length > 0) {
+      const sum = progresses.reduce((acc, p) => acc + p, 0);
+      avgProgress = Math.round(sum / progresses.length);
+    }
+
+    return {
+      ...task,
+      start: minStart,
+      end: maxEnd,
+      progress: avgProgress
+    };
+  });
+};
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -70,9 +192,48 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [footerHeight, setFooterHeight] = useState(380);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+
+  // Lateral Sidebar Section selection state
+  const [activeSection, setActiveSection] = useState<'gantt' | 'equipo' | 'perfiles' | 'facturacion' | 'configuracion'>('gantt');
+  const [showJornadas, setShowJornadas] = useState(true);
+
+  // Sync scrolling Refs
+  const ganttScrollRef = useRef<HTMLDivElement | null>(null);
+  const jornadasScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Sync scroll left-to-right between GanttCanvas and AsignacionPanel
+  useEffect(() => {
+    const gDiv = ganttScrollRef.current;
+    const jDiv = jornadasScrollRef.current;
+    if (!gDiv || !jDiv) return;
+
+    let isSyncing = false;
+
+    const handleGanttScroll = () => {
+      if (jDiv.scrollLeft !== gDiv.scrollLeft) {
+        jDiv.scrollLeft = gDiv.scrollLeft;
+      }
+    };
+
+    const handleJornadasScroll = () => {
+      if (gDiv.scrollLeft !== jDiv.scrollLeft) {
+        gDiv.scrollLeft = jDiv.scrollLeft;
+      }
+    };
+
+    gDiv.addEventListener('scroll', handleGanttScroll, { passive: true });
+    jDiv.addEventListener('scroll', handleJornadasScroll, { passive: true });
+
+    return () => {
+      gDiv.removeEventListener('scroll', handleGanttScroll);
+      jDiv.removeEventListener('scroll', handleJornadasScroll);
+    };
+  }, [activeSection, showJornadas, ganttScrollRef.current, jornadasScrollRef.current]);
 
   // Listen to Firebase sign-in state
   useEffect(() => {
@@ -114,8 +275,9 @@ export default function App() {
           setCollaborators(proj.collaborators || {});
           setCollaboratorUids(proj.collaboratorUids || []);
 
-          const d = proj.data;
-          setTasks(d.tasks || []);
+          const d = proj.data || {} as any;
+          const recalculated = recalculateWBS(d.tasks || []);
+          setTasks(computeRollupTasks(recalculated));
           setResources(d.resources || []);
           setAllocations(d.allocations || {});
           setProfileRates(d.rates || []);
@@ -123,9 +285,15 @@ export default function App() {
 
           // Setup configurations
           if (d.config) {
-            setProjectStart(new Date(d.config.projectStart || DEFAULT_PROJECT_START));
-            setProjectEnd(new Date(d.config.projectEnd || DEFAULT_PROJECT_END));
+            const startD = new Date(d.config.projectStart || DEFAULT_PROJECT_START);
+            const endD = new Date(d.config.projectEnd || DEFAULT_PROJECT_END);
+            setProjectStart(isNaN(startD.getTime()) ? new Date(DEFAULT_PROJECT_START) : startD);
+            setProjectEnd(isNaN(endD.getTime()) ? new Date(DEFAULT_PROJECT_END) : endD);
             setIsRelativeTime(!!d.config.isRelativeTime);
+          } else {
+            setProjectStart(new Date(DEFAULT_PROJECT_START));
+            setProjectEnd(new Date(DEFAULT_PROJECT_END));
+            setIsRelativeTime(false);
           }
 
           // Build yearly totals
@@ -240,8 +408,8 @@ export default function App() {
         config: {
           wbsLabel: 'WBS',
           responsibleLabel: 'Responsable',
-          projectStart: (customStart ?? projectStart).toISOString().split('T')[0],
-          projectEnd: (customEnd ?? projectEnd).toISOString().split('T')[0],
+          projectStart: safeIsoString(customStart ?? projectStart, DEFAULT_PROJECT_START),
+          projectEnd: safeIsoString(customEnd ?? projectEnd, DEFAULT_PROJECT_END),
           isRelativeTime: customRelative ?? isRelativeTime,
           statusDate: null
         }
@@ -282,11 +450,12 @@ export default function App() {
   };
 
   // Actions
-  const handleAddNewProject = async () => {
+  const handleAddNewProject = async (customTitle?: string) => {
     if (!user) return;
     const newId = `timing-${Date.now()}`;
+    const finalTitle = (customTitle && customTitle.trim()) || 'PROYECTO TIMING';
     const initialPayload = {
-      title: 'Nuevo Proyecto Timing',
+      title: finalTitle,
       collaborators: {},
       collaboratorUids: [],
       data: {
@@ -357,9 +526,69 @@ export default function App() {
   };
 
   // Sub-state callbacks passed down to subcomponents
+  const handleUpdateProjectStart = (newDate: Date) => {
+    const oldProjectStart = new Date(projectStart);
+    setProjectStart(newDate);
+
+    const diffTime = newDate.getTime() - oldProjectStart.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    let updatedTasks = tasks;
+    let newProjectEnd = projectEnd;
+    let updatedAllocations = allocations;
+
+    if (diffDays !== 0) {
+      // Shifting all tasks blocks
+      updatedTasks = tasks.map(t => {
+        const s = new Date(t.start);
+        const e = new Date(t.end);
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return t;
+
+        const newStartD = new Date(s.getTime() + diffDays * 24 * 60 * 60 * 1000);
+        const newEndD = new Date(e.getTime() + diffDays * 24 * 60 * 60 * 1000);
+
+        return {
+          ...t,
+          start: newStartD.toISOString().split('T')[0],
+          end: newEndD.toISOString().split('T')[0]
+        };
+      });
+
+      // Shift projectEnd as well to keep project boundary length constant
+      newProjectEnd = new Date(projectEnd.getTime() + diffDays * 24 * 60 * 60 * 1000);
+      setProjectEnd(newProjectEnd);
+
+      // Shift allocation weeks keys to preserve resource assignments relative to shifted tasks
+      if (allocations) {
+        updatedAllocations = {};
+        for (const resId in allocations) {
+          updatedAllocations[resId] = {};
+          for (const weekKey in allocations[resId]) {
+            const allocationValue = allocations[resId][weekKey];
+            const d = new Date(weekKey);
+            if (!isNaN(d.getTime())) {
+              const shiftedDate = new Date(d.getTime() + diffDays * 24 * 60 * 60 * 1000);
+              const newWeekKey = shiftedDate.toISOString().split('T')[0];
+              updatedAllocations[resId][newWeekKey] = allocationValue;
+            } else {
+              updatedAllocations[resId][weekKey] = allocationValue;
+            }
+          }
+        }
+        setAllocations(updatedAllocations);
+      }
+    }
+
+    const rolledUp = computeRollupTasks(updatedTasks);
+    setTasks(rolledUp);
+    triggerCloudSave(projectTitle, rolledUp, resources, updatedAllocations, invoices, profileRates, newDate, newProjectEnd);
+  };
+
   const handleUpdateTasks = (newTasks: GanttTask[]) => {
-    setTasks(newTasks);
-    debounceCloudSave(newTasks, resources, allocations, invoices, profileRates);
+    const recalculated = recalculateWBS(newTasks);
+    const rolledUp = computeRollupTasks(recalculated);
+    setTasks(rolledUp);
+    debounceCloudSave(rolledUp, resources, allocations, invoices, profileRates);
   };
 
   const handleAddResource = () => {
@@ -472,8 +701,8 @@ export default function App() {
       config: {
         wbsLabel: 'WBS',
         responsibleLabel: 'Responsable',
-        projectStart: projectStart.toISOString().split('T')[0],
-        projectEnd: projectEnd.toISOString().split('T')[0],
+        projectStart: safeIsoString(projectStart, DEFAULT_PROJECT_START),
+        projectEnd: safeIsoString(projectEnd, DEFAULT_PROJECT_END),
         isRelativeTime,
         statusDate: null
       }
@@ -510,7 +739,9 @@ export default function App() {
       try {
         const raw = JSON.parse(e.target?.result as string);
         if (raw.tasks && raw.resources) {
-          setTasks(raw.tasks);
+          const recalculated = recalculateWBS(raw.tasks);
+          const rolledUp = computeRollupTasks(recalculated);
+          setTasks(rolledUp);
           setResources(raw.resources);
           setAllocations(raw.allocations || {});
           setProfileRates(raw.rates || []);
@@ -522,7 +753,7 @@ export default function App() {
           }
           triggerCloudSave(
             projectTitle,
-            raw.tasks,
+            rolledUp,
             raw.resources,
             raw.allocations,
             raw.invoices,
@@ -557,89 +788,101 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#f8fafc] overflow-hidden font-sans">
+    <div className="h-screen w-full flex flex-col bg-[#fafafa] overflow-hidden font-sans text-slate-900 selection:bg-orange-500/20 antialiased">
       {/* Top Navigation Cockpit Header */}
-      <header className="min-h-[64px] py-3 lg:py-0 lg:h-[64px] shrink-0 border-b-2 border-slate-200 bg-slate-900 text-white flex flex-col lg:flex-row items-stretch lg:items-center justify-between px-3 md:px-6 z-10 select-none shadow-lg gap-3 lg:gap-0">
+      <header className="min-h-[64px] py-2.5 lg:py-0 lg:h-[64px] shrink-0 border-b border-slate-950/80 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col lg:flex-row items-stretch lg:items-center justify-between px-4 md:px-6 z-40 select-none shadow-xl gap-3 lg:gap-0">
+        
         {/* Logo and project name input */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 pr-0 lg:pr-6 justify-between lg:justify-start">
-          <div className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 bg-orange-600 rounded-xl font-bold text-sm tracking-tight shrink-0 shadow-md">
-            <Sparkles size={16} />
-            <span className="hidden xs:inline">SGS TIMING v1.0.1</span>
-            <span className="inline xs:hidden text-xs font-black">SGS</span>
+        <div className="flex flex-wrap items-center gap-2.5 md:gap-4 flex-1 min-w-0 pr-0 lg:pr-4 justify-between lg:justify-start">
+          {/* Brand Logo with display typography */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 rounded-xl font-display font-black text-xs sm:text-sm tracking-wide shrink-0 shadow-lg shadow-orange-600/10 border border-orange-400/20 hover:brightness-105 transition-all select-none">
+            <FolderKanban size={14} className="text-white shrink-0" />
+            <span>SGS TIMING</span>
           </div>
 
-          <div className="flex items-center gap-1.5 md:gap-3 max-w-sm flex-grow min-w-0">
-            <span className="text-slate-500 font-bold shrink-0 hidden sm:inline">::</span>
-            <input
-              value={projectTitle}
-              readOnly={isClientView}
-              onChange={(e) => {
-                setProjectTitle(e.target.value);
-                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                saveTimeoutRef.current = setTimeout(() => {
-                  triggerCloudSave(e.target.value);
-                }, 1500);
-              }}
-              onSubmit={() => triggerCloudSave(projectTitle)}
-              placeholder="Mi Proyecto de Timing"
-              className="bg-transparent border-none text-xs sm:text-[15px] font-black text-white focus:outline-none focus:ring-0 p-0 w-full truncate border-b border-transparent focus:border-slate-700 rounded px-1 -ml-1 sm:px-2 sm:-ml-2"
-            />
-          </div>
-
-          {/* Project dropdown cloud selector */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 bg-slate-800/40 border border-slate-700/30 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl">
-            <FolderKanban size={13} className="text-orange-500" />
-            <select
-              value={currentProjectId || ''}
-              onChange={(e) => setCurrentProjectId(e.target.value)}
-              className="bg-transparent border-none text-[10px] sm:text-[11px] font-black focus:ring-0 cursor-pointer text-slate-200 p-0 pr-4 sm:pr-6 uppercase tracking-wider"
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id} className="bg-slate-900 text-white">
-                  {p.title.toUpperCase()}
-                </option>
-              ))}
-              {projects.length === 0 && <option value="">Crear...</option>}
-            </select>
-            {!isClientView && (
-              <button
-                onClick={handleAddNewProject}
-                className="p-1 hover:bg-slate-700/50 rounded-lg text-slate-300 hover:text-white transition-colors ml-0.5"
-                title="Nuevo Proyecto"
+          {/* Unified Project Switcher & Renamer */}
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/20 transition-all shrink-0 max-w-sm">
+            {/* Project dropdown selector */}
+            <div className="flex items-center gap-1 bg-white/5 border-r border-white/10 shrink-0 select-none pl-2.5 pr-1 py-1.5">
+              <CloudLightning size={12} className="text-orange-500 shrink-0" />
+              <select
+                value={currentProjectId || ''}
+                onChange={(e) => setCurrentProjectId(e.target.value)}
+                className="bg-transparent border-none text-[10px] font-extrabold font-mono focus:ring-0 cursor-pointer text-slate-200 p-0 pr-4 uppercase tracking-wider focus:outline-none"
               >
-                <Plus size={13} />
-              </button>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-slate-950 text-slate-200 py-1 font-sans font-bold">
+                    {p.title.toUpperCase()}
+                  </option>
+                ))}
+                {projects.length === 0 && <option value="">Crear...</option>}
+              </select>
+            </div>
+
+            {/* Rename input / Display */}
+            {!isClientView ? (
+              <input
+                value={projectTitle}
+                onChange={(e) => {
+                  setProjectTitle(e.target.value);
+                  if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                  saveTimeoutRef.current = setTimeout(() => {
+                    triggerCloudSave(e.target.value);
+                  }, 1500);
+                }}
+                onSubmit={() => triggerCloudSave(projectTitle)}
+                placeholder="Editar título..."
+                className="bg-transparent border-none text-[10.5px] font-extrabold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0 px-2.5 py-1.5 w-32 truncate uppercase tracking-wider font-display"
+              />
+            ) : (
+              <span className="text-[10.5px] font-extrabold text-slate-300 px-2.5 py-1.5 w-32 truncate select-none uppercase tracking-wider font-display">
+                {projectTitle}
+              </span>
             )}
           </div>
 
+          {!isClientView && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white rounded-xl text-[10px] font-bold transition-all uppercase tracking-wider shrink-0 select-none font-sans"
+              title="Crear un nuevo proyecto de Timing"
+            >
+              <Plus size={12} />
+              <span>Nuevo Proyecto</span>
+            </button>
+          )}
+
           {/* Collaborator Badge Information */}
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-800/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-700/20 shrink-0">
-            <Activity size={12} className="text-emerald-400" />
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-              <span className="hidden sm:inline">Rol: </span>
+          <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-xl border border-white/5 shrink-0 select-none">
+            <span className="relative flex h-1.5 w-1.5 mr-0.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-[9px] font-bold font-mono text-slate-300 uppercase tracking-wider">
               {activeRole === 'owner' ? 'Propietario' : activeRole === 'editor' ? 'Editor' : 'Lector'}
             </span>
           </div>
         </div>
 
         {/* Sync, Share, and Sign-out Actions */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0 justify-between lg:justify-end border-t border-slate-800/30 pt-2 lg:pt-0 lg:border-t-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0 justify-between lg:justify-end border-t border-white/5 pt-2.5 lg:pt-0 lg:border-t-0">
+          
           {/* Cloud Saving indicators */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
             {isSaving ? (
-              <div className="flex items-center gap-1.5 text-orange-400 text-[10px] font-black uppercase tracking-wider">
-                <Cloud className="animate-bounce" size={14} />
-                <span>Sincronizando...</span>
+              <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-bold uppercase tracking-wider">
+                <Cloud className="animate-bounce" size={13} />
+                <span>Guardando...</span>
               </div>
             ) : saveError ? (
-              <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-black uppercase tracking-wider" title={saveError}>
-                <AlertTriangle size={14} />
-                <span>Error G.</span>
+              <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-bold uppercase tracking-wider" title={saveError}>
+                <AlertTriangle size={13} />
+                <span>Error guardado</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-black uppercase tracking-wider">
-                <CheckCircle size={14} />
-                <span>Guardado</span>
+              <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                <CheckCircle size={13} className="text-emerald-400" />
+                <span>Nube Al Día</span>
               </div>
             )}
           </div>
@@ -647,10 +890,10 @@ export default function App() {
           {!isClientView && currentProjectId && (
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl text-[10px] font-black transition-colors uppercase tracking-wider shadow-sm shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-100 hover:text-white border border-white/10 rounded-xl text-[10px] font-bold transition-all uppercase tracking-wider shadow-sm shrink-0"
               title="Compartir Proyecto"
             >
-              <Share2 size={13} className="text-orange-500" />
+              <Share2 size={12} className="text-orange-500" />
               <span>Compartir ({collaboratorUids.length})</span>
             </button>
           )}
@@ -658,23 +901,23 @@ export default function App() {
           {currentProjectId && activeRole === 'owner' && (
             <button
               onClick={handleDeleteCurrentProject}
-              className="p-2 ml-1 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-all"
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-xl transition-all"
               title="Eliminar Proyecto"
             >
-              <Trash2 size={15} />
+              <Trash2 size={13} />
             </button>
           )}
 
-          <div className="h-6 w-px bg-slate-800 mx-1 hidden xs:block" />
+          <div className="h-6 w-px bg-white/10 mx-1 hidden xs:block" />
 
           {/* User Profile Avatar block */}
           <div className="flex items-center gap-2.5 pl-1 min-w-0 max-w-[200px]">
             <div className="flex flex-col text-right justify-center min-w-0">
-              <div className="text-[10px] font-black truncate max-w-[100px] xs:max-w-[125px] sm:max-w-[150px] tracking-tight leading-none text-slate-300 mb-1" title={user.email}>
+              <div className="text-[10px] font-bold truncate max-w-[100px] xs:max-w-[125px] sm:max-w-[150px] tracking-tight leading-none text-slate-300 mb-1" title={user.email}>
                 {user.email}
               </div>
-              <div className="text-[8px] font-extrabold text-orange-500 uppercase tracking-widest leading-none block">
-                SGS Staff
+              <div className="text-[8px] font-bold font-mono text-orange-500 uppercase tracking-widest leading-none block">
+                SGS STAFF
               </div>
             </div>
             <button
@@ -683,171 +926,255 @@ export default function App() {
                   signOut(auth);
                 }
               }}
-              className="p-2 bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-300 rounded-xl transition-colors shrink-0"
-              title="Cerrar Desconectarse"
+              className="p-2 bg-white/5 hover:bg-white/10 hover:text-red-400 text-slate-300 rounded-xl transition-colors shrink-0"
+              title="Cerrar sesión"
             >
-              <LogOut size={15} />
+              <LogOut size={13} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main split work space area */}
+      {/* Main split work space area with Lateral Sidebar Menu */}
       <div className="flex-1 flex overflow-hidden relative">
-        <div className="flex-1 flex flex-col overflow-hidden" style={{ paddingBottom: footerHeight }}>
-          <div className="flex-grow flex overflow-hidden">
-            {/* Left Drawer Workspace Sidebar: Teammember / resource list panel */}
-            <aside className={`${isSidebarOpen ? 'w-[300px]' : 'w-0 border-r-0'} shrink-0 border-r-2 border-slate-200 bg-white flex flex-col z-10 shadow-sm relative transition-all duration-300 overflow-hidden`}>
-              <div className="h-[54px] border-b border-slate-100 flex items-center justify-between px-6 bg-slate-50/50 shrink-0 whitespace-nowrap overflow-hidden">
-                <div className="flex items-center gap-2">
-                  <Users className="text-orange-600" size={16} />
-                  <span className="text-[11px] font-black uppercase text-slate-900 tracking-wider">Equipo de Trabajo</span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {!isClientView && (
-                    <button
-                      onClick={handleAddResource}
-                      className="p-2 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors"
-                      title="Añadir Recurso"
-                    >
-                      <Plus size={14} />
-                    </button>
+        {/* Navigation Sidebar (Menu Lateral) */}
+        <nav className={`transition-all duration-300 ${isNavCollapsed ? 'w-16' : 'w-16 md:w-60'} bg-gradient-to-b from-slate-950 to-slate-900 border-r border-slate-950 flex flex-col justify-between select-none py-4 shrink-0 z-30`}>
+          <div className="space-y-1.5 px-2 md:px-3">
+            {[
+              { id: 'gantt', label: 'Plan de Trabajo', icon: Calendar, subtitle: 'Gantt & Jornadas' },
+              { id: 'equipo', label: 'Equipo', icon: Users, subtitle: 'Miembros de Trabajo' },
+              { id: 'perfiles', label: 'Perfiles Maestro', icon: FileSpreadsheet, subtitle: 'Tarifas de Roles' },
+              { id: 'facturacion', label: 'Facturación', icon: DollarSign, subtitle: 'Hitos de Cobro' },
+              { id: 'configuracion', label: 'Configuración', icon: Settings2, subtitle: 'Parámetros Timing' },
+            ].map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id as any)}
+                  className={`w-full flex items-center justify-center ${isNavCollapsed ? 'justify-center px-0' : 'md:justify-start px-3'} gap-3 py-2.5 rounded-xl transition-all duration-150 group relative ${
+                    isActive
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white font-black shadow-lg shadow-orange-950/40 border border-orange-400/10'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                  }`}
+                  title={section.label}
+                >
+                  <Icon size={15} className={`shrink-0 ${isActive ? 'text-white scale-105' : 'text-slate-400 group-hover:text-orange-500 transition-colors'}`} />
+                  <div className={`${isNavCollapsed ? 'hidden' : 'hidden md:flex'} flex-col text-left`}>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold font-display">{section.label}</span>
+                    <span className={`text-[8px] uppercase tracking-wider leading-none mt-0.5 font-bold ${isActive ? 'text-orange-200' : 'text-slate-500 group-hover:text-slate-400'}`}>
+                      {section.subtitle}
+                    </span>
+                  </div>
+                  {isActive && !isNavCollapsed && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   )}
+                </button>
+              );
+            })}
+            
+            {/* Collapse Trigger Button */}
+            <button
+              onClick={() => setIsNavCollapsed(!isNavCollapsed)}
+              className={`w-full flex items-center justify-center ${
+                isNavCollapsed ? 'justify-center px-0' : 'md:justify-start px-3'
+              } gap-3 py-2.5 rounded-xl transition-all text-slate-500 hover:text-slate-300 hover:bg-white/5 mt-4 border-t border-white/5 pt-4`}
+              title={isNavCollapsed ? 'Expandir menú lateral' : 'Colapsar menú lateral'}
+            >
+              {isNavCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+              <span className={`${isNavCollapsed ? 'hidden' : 'hidden md:inline'} text-[10px] uppercase tracking-wider font-bold`}>
+                Colapsar Menú
+              </span>
+            </button>
+          </div>
+
+          {/* Quick stats section formatted in premium card style */}
+          <div className={`${isNavCollapsed ? 'hidden' : 'hidden md:block'} px-3 pt-3 border-t border-white/5`}>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center transition-all hover:bg-white/10">
+              <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase block mb-1">PRESUPUESTO TOTAL</span>
+              <span className="text-sm font-black text-amber-500 tracking-tight font-mono block">
+                {totalCost.toLocaleString()} €
+              </span>
+            </div>
+          </div>
+        </nav>
+
+        {/* Dynamic Workspace container */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-white">
+          {!currentProjectId ? (
+            <div className="flex-grow flex flex-col items-center justify-center p-8 text-center bg-slate-50/40 relative overflow-hidden select-none">
+              <div className="absolute top-[-10%] left-[-10%] w-[35%] h-[35%] bg-orange-100/20 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] bg-amber-100/15 rounded-full blur-3xl" />
+              
+              <div className="max-w-md bg-white p-10 rounded-[2.5rem] border border-slate-200/50 shadow-xl flex flex-col items-center gap-6 relative z-10 animate-fade-in font-sans">
+                <div className="w-16 h-16 bg-gradient-to-tr from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/10">
+                  <FolderKanban className="text-white" size={32} />
+                </div>
+                
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold tracking-tight text-slate-800 font-display uppercase">SGS Timing</h2>
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                    No tienes ningún proyecto activo. Crea tu primera planificación de tiempos utilizando el botón a continuación para empezar.
+                  </p>
+                </div>
+
+                <div className="w-full">
                   <button
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="p-2 text-slate-400 hover:text-slate-650 rounded-xl hover:bg-slate-100 transition-colors"
-                    title="Ocultar Panel"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 font-bold text-[10px] uppercase tracking-widest text-white shadow-md shadow-orange-500/10 rounded-2xl transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
                   >
-                    <ChevronRight size={14} className="rotate-180" />
+                    <Plus size={14} />
+                    <span>Crear Proyecto de Timing</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeSection === 'gantt' && (
+            <div className="flex-grow flex flex-col overflow-hidden">
+              {/* Gantt scale & workloads controls row */}
+              <div className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6 shrink-0 select-none font-sans">
+                <div className="flex items-center gap-4 font-sans">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden xs:inline font-display">Escala:</span>
+                  <div className="flex items-center gap-1 bg-slate-100/70 p-1 rounded-2xl border border-slate-200/50">
+                    {(['Week', 'Month', 'Year'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setViewMode(mode)}
+                        className={`px-3.5 py-1.5 rounded-xl text-[9px] font-bold transition-all uppercase tracking-wider ${
+                          viewMode === mode
+                            ? 'bg-orange-500 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+                        }`}
+                      >
+                        {mode === 'Week' ? 'Semanas' : mode === 'Month' ? 'Meses' : 'Años'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 font-sans">
+                  <button
+                    onClick={() => setShowJornadas(!showJornadas)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-[9px] font-bold transition-all uppercase tracking-wider ${
+                      showJornadas
+                        ? 'bg-orange-50 border-orange-200/60 text-orange-600 shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50/80'
+                    }`}
+                  >
+                    <ListCollapse size={12} />
+                    <span>{showJornadas ? 'Ocultar Jornadas' : 'Asignar Jornadas'}</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto divide-y divide-slate-100 custom-scrollbar p-4 space-y-4">
-                {resources.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center space-y-2">
-                    <Users className="text-slate-300" size={24} />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-                      Sin recursos agregados
-                    </p>
-                  </div>
-                ) : (
-                  resources.map((res) => {
-                    const rateObj = profileRates.find((r) => r.role === res.role);
-                    const rate = rateObj?.rate || 0;
+              {/* Stacked Workspace body displaying Gantt chart and, if toggled, synced Jornadas grid */}
+              <div className="flex-1 flex flex-col overflow-hidden relative">
+                <div className="flex-1 flex overflow-hidden">
+                  {/* Right side interactive timeline (synchronized) */}
+                  <GanttCanvas
+                    viewMode={viewMode}
+                    tasks={tasks}
+                    onUpdateTasks={handleUpdateTasks}
+                    projectStart={projectStart}
+                    projectEnd={projectEnd}
+                    isRelativeTime={isRelativeTime}
+                    resources={resources}
+                    isClientView={isClientView}
+                    isSidebarOpen={isSidebarOpen}
+                    setIsSidebarOpen={setIsSidebarOpen}
+                    timelineScrollRef={ganttScrollRef}
+                  />
+                </div>
 
-                    // Calculate individual days
-                    let allocatedDays = 0;
-                    Object.entries(allocations[res.id] || {}).forEach(([k, days]) => {
-                      if (validWeeks.has(k)) {
-                        allocatedDays += (Number(days) || 0);
-                      }
-                    });
-
-                    return (
-                      <div key={res.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl relative group space-y-3">
-                        <div className="space-y-1.5">
-                          <input
-                            value={res.name}
-                            readOnly={isClientView}
-                            onChange={(e) => handleUpdateResource(res.id, { name: e.target.value })}
-                            className="w-full bg-transparent border-none text-[11px] font-black text-slate-950 p-0 focus:ring-0 focus:bg-white rounded px-1 -ml-1"
-                          />
-                          <select
-                            value={res.role}
-                            disabled={isClientView}
-                            onChange={(e) => handleUpdateResource(res.id, { role: e.target.value })}
-                            className="w-full bg-transparent border-none text-[9px] font-bold text-orange-600 focus:ring-0 p-0 cursor-pointer uppercase tracking-wider"
-                          >
-                            {profileRates.map((r, idx) => (
-                              <option key={idx} value={r.role}>
-                                {r.role.toUpperCase()}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Individual Resource Statistics */}
-                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200/50">
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                            <div>{allocatedDays.toFixed(1)}j asignadas</div>
-                            <div className="text-slate-900 font-extrabold mt-0.5 text-[11px] whitespace-nowrap">{(allocatedDays * rate).toLocaleString()} €</div>
-                          </div>
-                          {!isClientView && (
-                            <button
-                              onClick={() => handleRemoveResource(res.id)}
-                              className="p-2 text-slate-300 hover:text-red-500 rounded-xl transition-colors opacity-0 group-hover:opacity-100"
-                              title="Retirar Recurso"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
+                {/* Left-Right scroll aligned workday allocation */}
+                {showJornadas && (
+                  <AsignacionPanel
+                    viewMode={viewMode}
+                    resources={resources}
+                    allocations={allocations}
+                    validWeeks={validWeeks}
+                    onUpdateAllocation={handleUpdateAllocation}
+                    projectStart={projectStart}
+                    projectEnd={projectEnd}
+                    isRelativeTime={isRelativeTime}
+                    isClientView={isClientView}
+                    onRemoveResource={handleRemoveResource}
+                    onUpdateResource={handleUpdateResource}
+                    profileRoles={profileRates.map((r) => r.role)}
+                    rightScrollRef={jornadasScrollRef}
+                  />
                 )}
               </div>
-            </aside>
+            </div>
+          )}
 
-            {/* Core Interactive Gantt Canvas component */}
-            <GanttCanvas
-              viewMode={viewMode}
-              tasks={tasks}
-              onUpdateTasks={handleUpdateTasks}
+          {activeSection === 'equipo' && (
+            <EquipoPanel
+              resources={resources}
+              profileRates={profileRates}
+              allocations={allocations}
+              validWeeks={validWeeks}
+              onAddResource={handleAddResource}
+              onRemoveResource={handleRemoveResource}
+              onUpdateResource={handleUpdateResource}
+              isClientView={isClientView}
+            />
+          )}
+
+          {activeSection === 'perfiles' && (
+            <PerfilesPanel
+              profileRates={profileRates}
+              onUpdateRates={handleUpdateRates}
+              isClientView={isClientView}
+            />
+          )}
+
+          {activeSection === 'facturacion' && (
+            <FacturacionPanel
+              invoices={invoices}
+              onUpdateInvoices={handleUpdateInvoices}
+              yearlyInvoicingTotals={yearlyInvoicingTotals}
+              onUpdateYearlyInvoicingTotals={setYearlyInvoicingTotals}
+              generateMonthlyInvoices={generateMonthlyInvoices}
               projectStart={projectStart}
               projectEnd={projectEnd}
-              isRelativeTime={isRelativeTime}
               resources={resources}
+              profileRates={profileRates}
+              allocations={allocations}
+              validWeeks={validWeeks}
               isClientView={isClientView}
-              isSidebarOpen={isSidebarOpen}
-              setIsSidebarOpen={setIsSidebarOpen}
             />
-          </div>
-        </div>
+          )}
 
-        {/* Lower Workloads & Milestones panel */}
-        <AdminPanel
-          viewMode={viewMode}
-          resources={resources}
-          allocations={allocations}
-          validWeeks={validWeeks}
-          onUpdateAllocation={handleUpdateAllocation}
-          totalCost={totalCost}
-          profileRates={profileRates}
-          setProfileRates={handleUpdateRates}
-          onAddResource={handleAddResource}
-          onRemoveResource={handleRemoveResource}
-          onUpdateResource={handleUpdateResource}
-          projectStart={projectStart}
-          setProjectStart={(d) => {
-            setProjectStart(d);
-            triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, d, projectEnd);
-          }}
-          projectEnd={projectEnd}
-          setProjectEnd={(d) => {
-            setProjectEnd(d);
-            triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, projectStart, d);
-          }}
-          isRelativeTime={isRelativeTime}
-          setIsRelativeTime={(v) => {
-            setIsRelativeTime(v);
-            triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, projectStart, projectEnd, v);
-          }}
-          onExport={handleExportBackup}
-          onExportReport={handleExportReport}
-          onImport={handleImportBackup}
-          invoices={invoices}
-          setInvoices={handleUpdateInvoices}
-          yearlyInvoicingTotals={yearlyInvoicingTotals}
-          setYearlyInvoicingTotals={setYearlyInvoicingTotals}
-          generateMonthlyInvoices={generateMonthlyInvoices}
-          visibleYears={visibleYears}
-          setVisibleYears={setVisibleYears}
-          footerHeight={footerHeight}
-          onStartResizeHeight={handleStartResizeHeight}
-          isResizingHeight={isResizingHeight}
-        />
+          {activeSection === 'configuracion' && (
+            <ConfiguracionPanel
+              projectStart={projectStart}
+              setProjectStart={handleUpdateProjectStart}
+              projectEnd={projectEnd}
+              setProjectEnd={(d) => {
+                setProjectEnd(d);
+                triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, projectStart, d);
+              }}
+              isRelativeTime={isRelativeTime}
+              setIsRelativeTime={(v) => {
+                setIsRelativeTime(v);
+                triggerCloudSave(projectTitle, tasks, resources, allocations, invoices, profileRates, projectStart, projectEnd, v);
+              }}
+              onExport={handleExportBackup}
+              onExportReport={handleExportReport}
+              onImport={handleImportBackup}
+              totalCost={totalCost}
+              visibleYears={visibleYears}
+              setVisibleYears={setVisibleYears}
+              isClientView={isClientView}
+            />
+          )}
+        </>
+      )}
+    </div>
       </div>
 
       {/* Share settings configuration overlay */}
@@ -860,6 +1187,15 @@ export default function App() {
           onUpdate={handleUpdateCollaborators}
         />
       )}
+
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={async (title) => {
+          await handleAddNewProject(title);
+        }}
+      />
     </div>
   );
 }

@@ -6,6 +6,252 @@ import {
   ChevronUp, ChevronDown, CheckCircle2, AlertCircle, Edit3, Settings, HelpCircle, Users
 } from 'lucide-react';
 
+const getInitials = (name: string) => {
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return parts[0].substring(0, 2).toUpperCase();
+};
+
+// Color coding helper to stylize Chapters, Standard Tasks (grouped by parent chapter), and Milestones (Hitos)
+export const getTaskStyles = (task: GanttTask) => {
+  if (!task) {
+    return {
+      isChapter: false,
+      isMilestone: false,
+      leftPaneBg: 'bg-white border-b border-slate-100',
+      textClass: 'font-semibold text-[10.5px] text-slate-800',
+      wbsBadge: 'bg-slate-100 text-slate-700 font-bold',
+      barBg: 'bg-slate-200/40 border border-slate-350 shadow-inner',
+      progressBg: 'bg-indigo-500',
+      milestoneClass: 'bg-amber-500 hover:bg-amber-400 border-2 border-amber-600',
+    };
+  }
+
+  const wbsVal = task.wbs || '';
+  const isChapter = !wbsVal.includes('.');
+  const isMilestone = task.start === task.end;
+
+  // Root chapter number based on WBS prefix (e.g. from "2.1.3" we extract 2)
+  const prefix = wbsVal.split('.')[0] || '1';
+  let parentNum = parseInt(prefix);
+  if (isNaN(parentNum)) parentNum = 1;
+
+  // Modern vibrant soft palettes per root chapter
+  const palettes = [
+    {
+      // Chapter 1: Indigo Theme
+      chapterBg: 'bg-indigo-950/90',
+      chapterProgress: 'bg-indigo-600',
+      taskBg: 'bg-indigo-50/70 hover:bg-indigo-100 border-indigo-200 text-indigo-950',
+      taskProgress: 'bg-indigo-500',
+      borderLeft: 'border-l-4 border-indigo-500',
+      wbsBadge: 'bg-indigo-100 text-indigo-700 font-bold',
+    },
+    {
+      // Chapter 2: Emerald/Teal Theme
+      chapterBg: 'bg-teal-950/90',
+      chapterProgress: 'bg-teal-600',
+      taskBg: 'bg-teal-50/70 hover:bg-teal-100 border-teal-200 text-teal-950',
+      taskProgress: 'bg-teal-500',
+      borderLeft: 'border-l-4 border-teal-500',
+      wbsBadge: 'bg-teal-100 text-teal-700 font-bold',
+    },
+    {
+      // Chapter 3: Amber/Orange Theme
+      chapterBg: 'bg-amber-950/90',
+      chapterProgress: 'bg-amber-600',
+      taskBg: 'bg-amber-50/70 hover:bg-amber-100 border-amber-200 text-amber-950',
+      taskProgress: 'bg-amber-500',
+      borderLeft: 'border-l-4 border-amber-500',
+      wbsBadge: 'bg-amber-100 text-amber-700 font-bold',
+    },
+    {
+      // Chapter 4: Purple/Violet Theme
+      chapterBg: 'bg-purple-950/90',
+      chapterProgress: 'bg-purple-600',
+      taskBg: 'bg-purple-50/70 hover:bg-purple-100 border-purple-200 text-purple-950',
+      taskProgress: 'bg-purple-500',
+      borderLeft: 'border-l-4 border-purple-500',
+      wbsBadge: 'bg-purple-100 text-purple-700 font-bold',
+    },
+    {
+      // Chapter 5: Sky/Navy Theme
+      chapterBg: 'bg-sky-950/90',
+      chapterProgress: 'bg-sky-600',
+      taskBg: 'bg-sky-50/70 hover:bg-sky-100 border-sky-200 text-sky-950',
+      taskProgress: 'bg-sky-500',
+      borderLeft: 'border-l-4 border-sky-500',
+      wbsBadge: 'bg-sky-100 text-sky-700 font-bold',
+    },
+    {
+      // Chapter 6: Rose Theme
+      chapterBg: 'bg-rose-950/90',
+      chapterProgress: 'bg-rose-600',
+      taskBg: 'bg-rose-50/70 hover:bg-rose-100 border-rose-200 text-rose-950',
+      taskProgress: 'bg-rose-500',
+      borderLeft: 'border-l-4 border-rose-500',
+      wbsBadge: 'bg-rose-100 text-rose-700 font-bold',
+    },
+  ];
+
+  // Map of explicit named colors assigned dynamically to custom task overrides
+  const customPalettes: { [key: string]: typeof palettes[0] } = {
+    red: {
+      chapterBg: 'bg-red-950/90',
+      chapterProgress: 'bg-red-600',
+      taskBg: 'bg-red-50/75 hover:bg-red-100 border-red-200 text-red-950',
+      taskProgress: 'bg-red-500',
+      borderLeft: 'border-l-4 border-red-500',
+      wbsBadge: 'bg-red-100 text-red-700 font-bold',
+    },
+    orange: {
+      chapterBg: 'bg-orange-950/90',
+      chapterProgress: 'bg-orange-600',
+      taskBg: 'bg-orange-50/75 hover:bg-orange-100 border-orange-200 text-orange-950',
+      taskProgress: 'bg-orange-500',
+      borderLeft: 'border-l-4 border-orange-500',
+      wbsBadge: 'bg-orange-100 text-orange-700 font-bold',
+    },
+    amber: {
+      chapterBg: 'bg-amber-950/90',
+      chapterProgress: 'bg-amber-600',
+      taskBg: 'bg-amber-50/75 hover:bg-amber-100 border-amber-200 text-amber-950',
+      taskProgress: 'bg-amber-500',
+      borderLeft: 'border-l-4 border-amber-500',
+      wbsBadge: 'bg-amber-100 text-amber-700 font-bold',
+    },
+    green: {
+      chapterBg: 'bg-green-950/90',
+      chapterProgress: 'bg-green-600',
+      taskBg: 'bg-green-50/75 hover:bg-green-100 border-green-200 text-green-950',
+      taskProgress: 'bg-green-500',
+      borderLeft: 'border-l-4 border-green-500',
+      wbsBadge: 'bg-green-100 text-green-700 font-bold',
+    },
+    emerald: {
+      chapterBg: 'bg-emerald-950/90',
+      chapterProgress: 'bg-emerald-600',
+      taskBg: 'bg-emerald-50/75 hover:bg-emerald-100 border-emerald-200 text-emerald-90 tracking-wide', // fixed text color
+      taskProgress: 'bg-emerald-500',
+      borderLeft: 'border-l-4 border-emerald-500',
+      wbsBadge: 'bg-emerald-100 text-emerald-700 font-bold',
+    },
+    teal: {
+      chapterBg: 'bg-teal-950/90',
+      chapterProgress: 'bg-teal-600',
+      taskBg: 'bg-teal-50/75 hover:bg-teal-100 border-teal-200 text-teal-950',
+      taskProgress: 'bg-teal-500',
+      borderLeft: 'border-l-4 border-teal-500',
+      wbsBadge: 'bg-teal-100 text-teal-700 font-bold',
+    },
+    sky: {
+      chapterBg: 'bg-sky-950/90',
+      chapterProgress: 'bg-sky-600',
+      taskBg: 'bg-sky-50/75 hover:bg-sky-100 border-sky-200 text-sky-950',
+      taskProgress: 'bg-sky-500',
+      borderLeft: 'border-l-4 border-sky-500',
+      wbsBadge: 'bg-sky-100 text-sky-700 font-bold',
+    },
+    blue: {
+      chapterBg: 'bg-blue-950/90',
+      chapterProgress: 'bg-blue-600',
+      taskBg: 'bg-blue-50/75 hover:bg-blue-100 border-blue-200 text-blue-950',
+      taskProgress: 'bg-blue-500',
+      borderLeft: 'border-l-4 border-blue-500',
+      wbsBadge: 'bg-blue-100 text-blue-700 font-bold',
+    },
+    indigo: {
+      chapterBg: 'bg-indigo-950/90',
+      chapterProgress: 'bg-indigo-600',
+      taskBg: 'bg-indigo-50/75 hover:bg-indigo-100 border-indigo-200 text-indigo-950',
+      taskProgress: 'bg-indigo-500',
+      borderLeft: 'border-l-4 border-indigo-500',
+      wbsBadge: 'bg-indigo-100 text-indigo-700 font-bold',
+    },
+    purple: {
+      chapterBg: 'bg-purple-950/90',
+      chapterProgress: 'bg-purple-600',
+      taskBg: 'bg-purple-50/75 hover:bg-purple-100 border-purple-200 text-purple-950',
+      taskProgress: 'bg-purple-500',
+      borderLeft: 'border-l-4 border-purple-500',
+      wbsBadge: 'bg-purple-100 text-purple-700 font-bold',
+    },
+    rose: {
+      chapterBg: 'bg-rose-950/90',
+      chapterProgress: 'bg-rose-600',
+      taskBg: 'bg-rose-50/75 hover:bg-rose-100 border-rose-200 text-rose-950',
+      taskProgress: 'bg-rose-500',
+      borderLeft: 'border-l-4 border-rose-500',
+      wbsBadge: 'bg-rose-100 text-rose-700 font-bold',
+    },
+  };
+
+  let paletteIndex = (parentNum - 1) % palettes.length;
+  if (paletteIndex < 0 || isNaN(paletteIndex)) {
+    paletteIndex = 0;
+  }
+  let p = palettes[paletteIndex] || palettes[0];
+  if (task.color && customPalettes[task.color]) {
+    p = customPalettes[task.color];
+  }
+
+  if (isChapter) {
+    return {
+      isChapter: true,
+      isMilestone: false,
+      leftPaneBg: 'bg-[#f8fafc] border-b border-slate-200/80 hover:bg-slate-100/70 transition-colors',
+      textClass: 'font-bold uppercase text-[11px] tracking-wider text-slate-800 font-display',
+      wbsBadge: 'bg-slate-900 text-white font-bold font-mono',
+      barBg: 'bg-slate-900 border border-slate-800 shadow-sm',
+      progressBg: p.chapterProgress,
+      milestoneClass: 'hidden',
+    };
+  } else if (isMilestone) {
+    const themeColor = task.color || 'amber';
+    const bgMap: { [key: string]: string } = {
+      red: 'bg-red-500 border-red-600 text-red-950 hover:bg-red-400 bg-red-50/20 border-red-200/50 hover:bg-red-50',
+      orange: 'bg-orange-500 border-orange-600 text-orange-950 hover:bg-orange-400 bg-orange-50/20 border-orange-200/50 hover:bg-orange-50',
+      amber: 'bg-amber-500 border-amber-600 text-amber-950 hover:bg-amber-400 bg-amber-50/20 border-amber-250/50 hover:bg-amber-50',
+      green: 'bg-green-500 border-green-600 text-green-950 hover:bg-green-400 bg-green-50/20 border-green-200/50 hover:bg-green-50',
+      emerald: 'bg-emerald-500 border-emerald-600 text-emerald-950 hover:bg-emerald-400 bg-emerald-50/20 border-emerald-200/50 hover:bg-emerald-50',
+      teal: 'bg-teal-500 border-teal-600 text-teal-950 hover:bg-teal-400 bg-teal-50/20 border-teal-200/50 hover:bg-teal-50',
+      sky: 'bg-sky-505 border-sky-600 text-sky-950 hover:bg-sky-400 bg-sky-50/20 border-sky-200/50 hover:bg-sky-50',
+      blue: 'bg-blue-500 border-blue-600 text-blue-950 hover:bg-blue-400 bg-blue-50/20 border-blue-200/50 hover:bg-blue-50',
+      indigo: 'bg-indigo-500 border-indigo-600 text-indigo-950 hover:bg-indigo-400 bg-indigo-50/20 border-indigo-200/50 hover:bg-indigo-50',
+      purple: 'bg-purple-500 border-purple-600 text-purple-950 hover:bg-purple-400 bg-purple-50/20 border-purple-200/50 hover:bg-purple-50',
+      rose: 'bg-rose-550 border-rose-600 text-rose-950 hover:bg-rose-450 bg-rose-50/20 border-rose-200/50 hover:bg-rose-50',
+    };
+
+    const c = bgMap[themeColor] || bgMap['amber'];
+    const parts = c.split(' ');
+
+    return {
+      isChapter: false,
+      isMilestone: true,
+      leftPaneBg: `${parts[4]} ${parts[6] || 'hover:bg-amber-50'} border-b ${parts[5]} transition-all`,
+      textClass: `font-semibold text-[11px] ${parts[2]} font-sans`,
+      wbsBadge: `${parts[0]} text-white font-semibold font-mono`,
+      barBg: `${parts[0]} border ${parts[1]}`,
+      progressBg: 'bg-transparent',
+      milestoneClass: `${parts[0]} ${parts[3]} border-2 ${parts[1]}`, 
+    };
+  } else {
+    return {
+      isChapter: false,
+      isMilestone: false,
+      leftPaneBg: `${p.taskBg} border-b border-slate-100/70 ${p.borderLeft} transition-colors`,
+      textClass: 'font-medium text-[11px] text-slate-700 font-sans',
+      wbsBadge: `${p.wbsBadge} font-mono px-1.5 py-0.5 rounded text-[10px]`,
+      barBg: 'bg-slate-200/40 border border-slate-300 shadow-inner',
+      progressBg: p.taskProgress,
+      milestoneClass: 'hidden',
+    };
+  }
+};
+
 interface GanttCanvasProps {
   viewMode: ViewMode;
   tasks: GanttTask[];
@@ -17,6 +263,8 @@ interface GanttCanvasProps {
   isClientView?: boolean;
   isSidebarOpen?: boolean;
   setIsSidebarOpen?: (v: boolean) => void;
+  timelineScrollRef?: React.RefObject<HTMLDivElement | null>;
+  onTimelineScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
 }
 
 const ROW_HEIGHT = 56; // Fixed height in px for each task row
@@ -32,7 +280,9 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   resources,
   isClientView = false,
   isSidebarOpen = true,
-  setIsSidebarOpen
+  setIsSidebarOpen,
+  timelineScrollRef,
+  onTimelineScroll
 }) => {
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
@@ -40,6 +290,30 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<GanttTask | null>(null);
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
+  const [collapsedWbs, setCollapsedWbs] = useState<Record<string, boolean>>({});
+  const [paneMode, setPaneMode] = useState<'both' | 'tasks' | 'gantt'>('both');
+
+  // Check if a task's WBS is nested under a collapsed parent/chapter
+  const isTaskFilteredOut = (wbs: string) => {
+    if (!wbs) return false;
+    const parts = wbs.split('.');
+    for (let i = 1; i < parts.length; i++) {
+      const prefix = parts.slice(0, i).join('.');
+      if (collapsedWbs[prefix]) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const hasSubtasks = (taskWbs: string) => {
+    if (!taskWbs) return false;
+    return tasks.some(t => t && t.wbs && t.wbs.startsWith(`${taskWbs}.`));
+  };
+
+  const visibleTasks = useMemo(() => {
+    return tasks.filter(t => t && t.wbs && !isTaskFilteredOut(t.wbs));
+  }, [tasks, collapsedWbs]);
 
   // Dragging states
   const [draggingState, setDraggingState] = useState<{
@@ -118,7 +392,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
       let subLabel = "";
 
       if (viewMode === 'Week') {
-        const relativeMonthIndex = Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1;
+        const relativeMonthIndex = Math.max(1, Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1);
         const target = new Date(d.valueOf());
         const dayNr = (d.getDay() + 6) % 7;
         target.setDate(target.getDate() - dayNr + 3);
@@ -127,15 +401,32 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
         if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
         const weekNumber = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
 
-        label = `S${weekNumber}`;
-        subLabel = isRelativeTime ? `M${relativeMonthIndex}` : d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+        if (isRelativeTime) {
+          label = `S${index + 1}`;
+          subLabel = `M${relativeMonthIndex}`;
+        } else {
+          label = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase();
+          subLabel = `S${weekNumber}`;
+        }
       } else if (viewMode === 'Month') {
-        const relativeMonthIndex = Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1;
-        label = isRelativeTime ? `M${relativeMonthIndex}` : d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
-        subLabel = d.getFullYear().toString();
+        const relativeMonthIndex = index + 1;
+        const relativeYearIndex = Math.floor(index / 12) + 1;
+        if (isRelativeTime) {
+          label = `M${relativeMonthIndex}`;
+          subLabel = `AÑO ${relativeYearIndex}`;
+        } else {
+          label = d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+          subLabel = d.getFullYear().toString();
+        }
       } else {
-        const relativeYearIndex = Math.floor((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24 * 365)) + 1;
-        label = isRelativeTime ? `AÑO ${relativeYearIndex}` : d.getFullYear().toString();
+        const relativeYearIndex = index + 1;
+        if (isRelativeTime) {
+          label = `AÑO ${relativeYearIndex}`;
+          subLabel = "";
+        } else {
+          label = d.getFullYear().toString();
+          subLabel = "";
+        }
       }
 
       const colLeft = ((d.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24)) * pxPerDay;
@@ -156,16 +447,17 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   }, [viewMode, pxPerDay]);
 
   // Task operations
-  const handleAddTask = () => {
+  const handleAddChapter = () => {
     if (isClientView) return;
-    const taskCount = tasks.length;
+    const chapters = tasks.filter(t => t && t.wbs && !t.wbs.includes('.'));
+    const nextChapterNum = chapters.length + 1;
     const todayStr = new Date(projectStart).toISOString().split('T')[0];
-    const endStr = new Date(projectStart.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endStr = new Date(projectStart.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const newTask: GanttTask = {
-      id: Date.now().toString(),
-      wbs: `${taskCount + 1}`,
-      name: `Nueva Tarea ${taskCount + 1}`,
+    const newChapter: GanttTask = {
+      id: `chapter-${Date.now()}`,
+      wbs: `${nextChapterNum}`,
+      name: `CAPÍTULO ${nextChapterNum}: NUEVA SECCIÓN`,
       start: todayStr,
       end: endStr,
       progress: 0,
@@ -173,17 +465,120 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
       dependencies: [],
       notes: ''
     };
-    onUpdateTasks([...tasks, newTask]);
+
+    onUpdateTasks([...tasks, newChapter]);
+    setSelectedTaskId(newChapter.id);
+  };
+
+  const handleAddTaskValue = () => {
+    if (isClientView) return;
+    let targetParentWbs = '1';
+    
+    if (selectedTaskId) {
+      const selectedTask = tasks.find(t => t.id === selectedTaskId);
+      if (selectedTask && selectedTask.wbs) {
+        targetParentWbs = selectedTask.wbs.split('.')[0];
+      }
+    } else {
+      const chapters = tasks.filter(t => t && t.wbs && !t.wbs.includes('.'));
+      if (chapters.length > 0) {
+        targetParentWbs = chapters[chapters.length - 1].wbs || '1';
+      }
+    }
+
+    const prefix = `${targetParentWbs}.`;
+    const subtasks = tasks.filter(t => t && t.wbs && t.wbs.startsWith(prefix));
+    const nextSubtaskIndex = subtasks.length + 1;
+    const todayStr = new Date(projectStart).toISOString().split('T')[0];
+    const endStr = new Date(projectStart.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const newTask: GanttTask = {
+      id: `task-${Date.now()}`,
+      wbs: `${targetParentWbs}.${nextSubtaskIndex}`,
+      name: `Nueva Tarea ${targetParentWbs}.${nextSubtaskIndex}`,
+      start: todayStr,
+      end: endStr,
+      progress: 0,
+      responsible: '',
+      dependencies: [],
+      notes: ''
+    };
+
+    let insertIndex = tasks.length;
+    for (let i = tasks.length - 1; i >= 0; i--) {
+      const currentWbs = tasks[i]?.wbs || '';
+      if (currentWbs === targetParentWbs || currentWbs.startsWith(prefix)) {
+        insertIndex = i + 1;
+        break;
+      }
+    }
+
+    const nextTasks = [...tasks];
+    nextTasks.splice(insertIndex, 0, newTask);
+    onUpdateTasks(nextTasks);
     setSelectedTaskId(newTask.id);
+  };
+
+  const handleAddMilestone = () => {
+    if (isClientView) return;
+    let targetParentWbs = '1';
+    
+    if (selectedTaskId) {
+      const selectedTask = tasks.find(t => t.id === selectedTaskId);
+      if (selectedTask && selectedTask.wbs) {
+        targetParentWbs = selectedTask.wbs.split('.')[0];
+      }
+    } else {
+      const chapters = tasks.filter(t => t && t.wbs && !t.wbs.includes('.'));
+      if (chapters.length > 0) {
+        targetParentWbs = chapters[chapters.length - 1].wbs || '1';
+      }
+    }
+
+    const prefix = `${targetParentWbs}.`;
+    const subtasks = tasks.filter(t => t && t.wbs && t.wbs.startsWith(prefix));
+    const nextSubtaskIndex = subtasks.length + 1;
+    const todayStr = new Date(projectStart).toISOString().split('T')[0];
+
+    const newMilestone: GanttTask = {
+      id: `milestone-${Date.now()}`,
+      wbs: `${targetParentWbs}.${nextSubtaskIndex}`,
+      name: `Hito: Entrega Clave ${targetParentWbs}.${nextSubtaskIndex}`,
+      start: todayStr,
+      end: todayStr, // Same start & end date defines a Milestone!
+      progress: 0,
+      responsible: '',
+      dependencies: [],
+      notes: ''
+    };
+
+    let insertIndex = tasks.length;
+    for (let i = tasks.length - 1; i >= 0; i--) {
+      const currentWbs = tasks[i]?.wbs || '';
+      if (currentWbs === targetParentWbs || currentWbs.startsWith(prefix)) {
+        insertIndex = i + 1;
+        break;
+      }
+    }
+
+    const nextTasks = [...tasks];
+    nextTasks.splice(insertIndex, 0, newMilestone);
+    onUpdateTasks(nextTasks);
+    setSelectedTaskId(newMilestone.id);
+  };
+
+  const handleAddTask = () => {
+    handleAddTaskValue();
   };
 
   const handleDeleteTask = (id: string) => {
     if (isClientView) return;
-    const filtered = tasks.filter(t => t.id !== id).map((t, idx) => ({
-      ...t,
-      // Re-calculate basic WBS if simple integers are used
-      wbs: /^\d+(\.\d+)*$/.test(t.wbs) ? `${idx + 1}` : t.wbs
-    }));
+    const taskToDelete = tasks.find(t => t.id === id);
+    if (!taskToDelete) return;
+
+    const prefix = taskToDelete.wbs ? `${taskToDelete.wbs}.` : '';
+    const filtered = tasks.filter(t => t.id !== id && (!prefix || !t.wbs || !t.wbs.startsWith(prefix)));
+
     onUpdateTasks(filtered);
     if (selectedTaskId === id) setSelectedTaskId(null);
   };
@@ -200,22 +595,183 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
 
   const handleMoveTaskOrder = (index: number, direction: 'up' | 'down') => {
     if (isClientView) return;
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === tasks.length - 1) return;
+    const task = tasks[index];
+    if (!task) return;
 
-    const updated = [...tasks];
-    const targetIdx = direction === 'up' ? index - 1 : index + 1;
-    const temp = updated[index];
-    updated[index] = updated[targetIdx];
-    updated[targetIdx] = temp;
+    // A utility to get WBS parent path
+    const getParentWbs = (wbs: string) => {
+      const parts = (wbs || '').split('.');
+      if (parts.length <= 1) return "";
+      return parts.slice(0, -1).join('.');
+    };
 
-    // Rescale WBS codes if simple integers
-    const finalized = updated.map((t, idx) => ({
-      ...t,
-      wbs: /^\d+$/.test(t.wbs) ? `${idx + 1}` : t.wbs
-    }));
+    const taskParentWbs = getParentWbs(task.wbs);
 
-    onUpdateTasks(finalized);
+    // 1. Find the contiguous block for this task and all its subtasks (including grand-children, etc.)
+    const prefix = task.wbs ? `${task.wbs}.` : '';
+    const block: GanttTask[] = [task];
+    let i = index + 1;
+    while (i < tasks.length && tasks[i] && tasks[i].wbs && (prefix ? tasks[i].wbs.startsWith(prefix) : false)) {
+      block.push(tasks[i]);
+      i++;
+    }
+    const blockSize = block.length;
+    const blockEndIndex = index + blockSize - 1; // last index of the current block
+
+    let nextTasks: GanttTask[] = [];
+
+    if (direction === 'up') {
+      // Find the previous sibling (the previous task in the list at the SAME depth and sharing the same parent WBS)
+      let siblingIdx = -1;
+      for (let j = index - 1; j >= 0; j--) {
+        const t = tasks[j];
+        if (t && getParentWbs(t.wbs) === taskParentWbs) {
+          siblingIdx = j;
+          break;
+        }
+      }
+
+      if (siblingIdx === -1) {
+        // No sibling found with the same parent. Cannot move up.
+        return;
+      }
+
+      const beforeSibling = tasks.slice(0, siblingIdx);
+      const siblingBlock = tasks.slice(siblingIdx, index);
+      const afterBlock = tasks.slice(blockEndIndex + 1);
+
+      nextTasks = [
+        ...beforeSibling,
+        ...block,
+        ...siblingBlock,
+        ...afterBlock
+      ];
+    } else {
+      // Find the next sibling (the next task in the list at the same depth sharing the exact same parent WBS)
+      let siblingIdx = -1;
+      for (let j = blockEndIndex + 1; j < tasks.length; j++) {
+        const t = tasks[j];
+        if (t && getParentWbs(t.wbs) === taskParentWbs) {
+          siblingIdx = j;
+          break;
+        }
+      }
+
+      if (siblingIdx === -1) {
+        // No next sibling found with the same parent. Cannot move down.
+        return;
+      }
+
+      // Next sibling's block starts at siblingIdx and ends before the following sibling or shallow task.
+      const siblingTask = tasks[siblingIdx];
+      const siblingPrefix = siblingTask.wbs ? `${siblingTask.wbs}.` : '';
+      let siblingBlockEnd = siblingIdx + 1;
+      while (siblingBlockEnd < tasks.length && tasks[siblingBlockEnd] && tasks[siblingBlockEnd].wbs && (siblingPrefix ? tasks[siblingBlockEnd].wbs.startsWith(siblingPrefix) : false)) {
+        siblingBlockEnd++;
+      }
+
+      const beforeBlock = tasks.slice(0, index);
+      const middleStuff = tasks.slice(blockEndIndex + 1, siblingIdx);
+      const siblingBlock = tasks.slice(siblingIdx, siblingBlockEnd);
+      const afterSiblingBlock = tasks.slice(siblingBlockEnd);
+
+      nextTasks = [
+        ...beforeBlock,
+        ...middleStuff,
+        ...siblingBlock,
+        ...block,
+        ...afterSiblingBlock
+      ];
+    }
+
+    onUpdateTasks(nextTasks);
+  };
+
+  const handleIndentTask = (id: string) => {
+    if (isClientView) return;
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx <= 0) return; // No section or sibling above to indent under
+
+    const currentTask = tasks[idx];
+    const prevTask = tasks[idx - 1];
+    if (!currentTask || !prevTask) return;
+
+    // Use predecessor WBS as parent prefix or match its level
+    const prevWbs = prevTask.wbs || '1';
+    
+    // If preceding task is a chapter (no dots), e.g. "1", we indent currentTask to "1.1"
+    // If preceding task is "1.2", currentTask becomes "1.3" or "1.2.1"
+    // Let's make currentTask a subtask of the preceding task
+    const parentPrefix = prevWbs;
+    const prefix = `${parentPrefix}.`;
+    
+    // Count sibling subtasks under this parent to assign next numeric suffix
+    const siblings = tasks.filter(t => t && t.wbs && t.wbs.startsWith(prefix));
+    let nextNum = 1;
+    if (siblings.length > 0) {
+      const suffices = siblings.map(t => {
+        const parts = t.wbs.slice(prefix.length).split('.');
+        return parseInt(parts[0]) || 0;
+      });
+      nextNum = Math.max(...suffices, 0) + 1;
+    }
+
+    const nextTasks = tasks.map(t => {
+      if (t.id === id) {
+        return { ...t, wbs: `${parentPrefix}.${nextNum}` };
+      }
+      return t;
+    });
+
+    onUpdateTasks(nextTasks);
+  };
+
+  const handleOutdentTask = (id: string) => {
+    if (isClientView) return;
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx === -1) return;
+
+    const currentTask = tasks[idx];
+    if (!currentTask || !currentTask.wbs) return;
+
+    const wbsParts = currentTask.wbs.split('.');
+    if (wbsParts.length <= 1) {
+      // Already a root chapter, cannot outdent further
+      return;
+    }
+
+    let newWbs = '';
+    if (wbsParts.length === 2) {
+      // Promotes a subtask (e.g., "1.2") to a new Chapter
+      const rootChapters = tasks.filter(t => t && t.wbs && !t.wbs.includes('.'));
+      const nextChapterNum = rootChapters.length + 1;
+      newWbs = `${nextChapterNum}`;
+    } else {
+      // Promotes deep nested subtask (e.g., "1.2.3" -> "1.3" or similar)
+      const parentParts = wbsParts.slice(0, wbsParts.length - 2);
+      const parentPrefix = parentParts.join('.');
+      const prefix = parentPrefix ? `${parentPrefix}.` : '';
+      
+      const siblings = tasks.filter(t => t && t.wbs && t.wbs.startsWith(prefix) && t.wbs.split('.').length === wbsParts.length - 1);
+      let nextNum = 1;
+      if (siblings.length > 0) {
+        const suffices = siblings.map(t => {
+          const parts = t.wbs.slice(prefix.length).split('.');
+          return parseInt(parts[0]) || 0;
+        });
+        nextNum = Math.max(...suffices, 0) + 1;
+      }
+      newWbs = parentPrefix ? `${parentPrefix}.${nextNum}` : `${nextNum}`;
+    }
+
+    const nextTasks = tasks.map(t => {
+      if (t.id === id) {
+        return { ...t, wbs: newWbs };
+      }
+      return t;
+    });
+
+    onUpdateTasks(nextTasks);
   };
 
   // Mouse Drag handlers
@@ -244,7 +800,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - draggingState.initialX;
-      // Convert drag delta to days
+      
       const deltaDays = Math.round(deltaX / pxPerDay);
 
       const task = tasks.find(t => t.id === draggingState.taskId);
@@ -256,43 +812,53 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
         const startD = new Date(draggingState.initialStartStr);
         const endD = new Date(draggingState.initialEndStr);
 
+        if (isNaN(startD.getTime()) || isNaN(endD.getTime())) return t;
+
         if (draggingState.type === 'move') {
-          // Slide both start and end dates
-          startD.setDate(startD.getDate() + deltaDays);
-          endD.setDate(endD.getDate() + deltaDays);
+          // Slide both start and end dates linearly using 7 calendar days per week
+          const newStartD = new Date(startD.getTime() + deltaDays * 24 * 60 * 60 * 1000);
+          const newEndD = new Date(endD.getTime() + deltaDays * 24 * 60 * 60 * 1000);
+
           return {
             ...t,
-            start: startD.toISOString().split('T')[0],
-            end: endD.toISOString().split('T')[0]
+            start: newStartD.toISOString().split('T')[0],
+            end: newEndD.toISOString().split('T')[0]
           };
         }
 
         if (draggingState.type === 'resize-start') {
-          startD.setDate(startD.getDate() + deltaDays);
-          // Block start date from exceeding the end date
-          if (startD >= endD) {
-            startD.setTime(endD.getTime() - 24 * 60 * 60 * 1000); // 1 day before
+          const newStartD = new Date(startD.getTime() + deltaDays * 24 * 60 * 60 * 1000);
+          
+          if (newStartD > endD) {
+            return {
+              ...t,
+              start: endD.toISOString().split('T')[0]
+            };
           }
+
           return {
             ...t,
-            start: startD.toISOString().split('T')[0]
+            start: newStartD.toISOString().split('T')[0]
           };
         }
 
         if (draggingState.type === 'resize-end') {
-          endD.setDate(endD.getDate() + deltaDays);
-          // Block end date from being smaller than start date
-          if (endD <= startD) {
-            endD.setTime(startD.getTime() + 24 * 60 * 60 * 1000); // 1 day after
+          const newEndD = new Date(endD.getTime() + deltaDays * 24 * 60 * 60 * 1000);
+
+          if (newEndD < startD) {
+            return {
+              ...t,
+              end: startD.toISOString().split('T')[0]
+            };
           }
+
           return {
             ...t,
-            end: endD.toISOString().split('T')[0]
+            end: newEndD.toISOString().split('T')[0]
           };
         }
 
         if (draggingState.type === 'progress') {
-          // Calculate slider width from current DOM parameters or approximate
           const width = getWidthFromDates(t.start, t.end);
           if (width > 0) {
             const progressDelta = (deltaX / width) * 100;
@@ -339,7 +905,35 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
 
   const saveEditingTask = () => {
     if (!editingTask) return;
-    onUpdateTasks(tasks.map(t => t.id === editingTask.id ? editingTask : t));
+
+    // Validate dates to prevent invalid time value errors
+    const validated = { ...editingTask };
+    const defaultDateStr = (() => {
+      try {
+        return projectStart.toISOString().split('T')[0];
+      } catch {
+        return new Date().toISOString().split('T')[0];
+      }
+    })();
+
+    const startD = new Date(validated.start);
+    if (isNaN(startD.getTime())) {
+      validated.start = defaultDateStr;
+    }
+
+    const endD = new Date(validated.end);
+    if (isNaN(endD.getTime())) {
+      validated.end = validated.start;
+    }
+
+    // Ensure start is before or equal to end
+    const finalStart = new Date(validated.start);
+    const finalEnd = new Date(validated.end);
+    if (!isNaN(finalStart.getTime()) && !isNaN(finalEnd.getTime()) && finalStart > finalEnd) {
+      validated.end = validated.start;
+    }
+
+    onUpdateTasks(tasks.map(t => t.id === validated.id ? validated : t));
     setIsEditingModalOpen(false);
     setEditingTask(null);
   };
@@ -348,13 +942,13 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   const dependencyLines = useMemo(() => {
     const lines: React.ReactNode[] = [];
 
-    tasks.forEach((task, index) => {
+    visibleTasks.forEach((task, index) => {
       if (!task.dependencies || task.dependencies.length === 0) return;
 
       task.dependencies.forEach(depId => {
-        const predIndex = tasks.findIndex(t => t.id === depId);
+        const predIndex = visibleTasks.findIndex(t => t.id === depId);
         if (predIndex === -1) return;
-        const predTask = tasks[predIndex];
+        const predTask = visibleTasks[predIndex];
 
         // Pred End coordinate
         const predStartX = getXFromDate(predTask.start);
@@ -406,46 +1000,131 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
   }, [tasks, projectStart, pxPerDay]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-white">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#fafafa]">
       {/* Upper action-controls bar */}
-      <div className="h-14 px-6 border-b border-slate-100 bg-white flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          {setIsSidebarOpen && !isSidebarOpen && (
+      <div className="min-h-[56px] py-3 sm:py-0 sm:h-14 px-4 sm:px-6 border-b border-slate-200/60 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 z-10 shadow-xs select-none">
+        
+        {/* Left: Title and team button */}
+        <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+          <div className="flex items-center gap-2">
+            {setIsSidebarOpen && !isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-1.5 hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition-all flex items-center gap-1.5 shrink-0 shadow-xs hover:scale-[1.01]"
+                title="Mostrar Equipo de Trabajo"
+              >
+                <Users size={12} className="text-orange-600 animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Equipo</span>
+              </button>
+            )}
+            <BookOpen className="text-orange-500 shrink-0" size={15} />
+            <h2 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest font-display truncate">Plan de Trabajo</h2>
+          </div>
+
+          {/* Mobile view mode switcher toggle */}
+          <div className="flex sm:hidden items-center gap-0.5 bg-slate-100 p-0.5 rounded-xl border border-slate-200/40">
             <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="mr-2 p-1.5 hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-605 transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
-              title="Mostrar Equipo de Trabajo"
+              onClick={() => setPaneMode(paneMode === 'tasks' ? 'gantt' : paneMode === 'gantt' ? 'both' : 'tasks')}
+              className="px-2 py-1 text-[8.5px] font-extrabold text-orange-600 uppercase tracking-wider whitespace-nowrap"
             >
-              <Users size={14} className="text-orange-600 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-wider">Equipo</span>
+              VISTA: {paneMode === 'tasks' ? 'Planilla' : paneMode === 'gantt' ? 'Gráfico' : 'Div.'}
             </button>
-          )}
-          <BookOpen className="text-orange-600" size={18} />
-          <h2 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.15em]">Gestión Plan de Trabajo</h2>
+          </div>
         </div>
-        {!isClientView && (
-          <button
-            onClick={handleAddTask}
-            className="flex items-center gap-2 px-5 py-2 bg-orange-600 text-white rounded-xl text-[10px] font-black hover:bg-orange-700 transition-all uppercase tracking-widest shadow-lg shadow-orange-100"
-          >
-            <Plus size={16} /> Añadir Tarea
-          </button>
-        )}
+
+        {/* Right: view mode switcher + creation buttons, spaced elegantly */}
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
+          {/* Central Switcher for Desktop & Tablet */}
+          <div className="hidden sm:flex items-center gap-0.5 bg-slate-100/70 border border-slate-200/50 p-0.5 rounded-xl shrink-0">
+            <button
+              type="button"
+              onClick={() => setPaneMode('tasks')}
+              className={`px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all uppercase tracking-wider flex items-center gap-1 ${
+                paneMode === 'tasks'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Clock size={10} className={paneMode === 'tasks' ? 'text-orange-400' : 'text-slate-400'} />
+              <span>Planilla</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaneMode('gantt')}
+              className={`px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all uppercase tracking-wider flex items-center gap-1 ${
+                paneMode === 'gantt'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Calendar size={10} className={paneMode === 'gantt' ? 'text-orange-400' : 'text-slate-400'} />
+              <span>Gráfico</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaneMode('both')}
+              className={`px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all uppercase tracking-wider flex items-center gap-1 ${
+                paneMode === 'both'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Users size={10} className={paneMode === 'both' ? 'text-orange-400' : 'text-slate-400'} />
+              <span>Dividido</span>
+            </button>
+          </div>
+
+          {/* Creation buttons styled beautifully, less heavy */}
+          {!isClientView && (
+            <div className="flex items-center gap-1 w-full sm:w-auto shadow-xs bg-slate-100/80 border border-slate-200/55 p-0.5 rounded-xl shrink-0">
+              <button
+                onClick={handleAddChapter}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200/60 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-lg text-[8.5px] sm:text-[9px] font-extrabold uppercase tracking-wider transition-all"
+                title="Añadir un nuevo capítulo / sección principal"
+              >
+                <Plus size={10} />
+                <span>Capítulo</span>
+              </button>
+              <button
+                onClick={handleAddTaskValue}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[8.5px] sm:text-[9px] font-extrabold uppercase tracking-wider transition-all"
+                title="Añadir una sub-tarea"
+              >
+                <Plus size={10} />
+                <span>Tarea</span>
+              </button>
+              <button
+                onClick={handleAddMilestone}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 bg-amber-50 border border-amber-200/60 hover:bg-amber-100 text-amber-800 rounded-lg text-[8.5px] sm:text-[9px] font-extrabold uppercase tracking-wider transition-all"
+                title="Añadir un hito de entrega"
+              >
+                <Plus size={10} />
+                <span>Hito</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Tasks spreadsheet panel */}
-        <div className="w-[310px] sm:w-[380px] md:w-[450px] shrink-0 flex flex-col border-r border-slate-200 bg-white relative transition-all duration-200 overflow-hidden">
+        <div 
+          className={`flex flex-col bg-white relative transition-all duration-300 overflow-hidden ${
+            paneMode === 'gantt' ? 'hidden' : 
+            paneMode === 'tasks' ? 'w-full' : 
+            'w-[330px] sm:w-[410px] md:w-[520px] shrink-0 border-r border-slate-200'
+          }`}
+        >
           {/* Header Row */}
           <div
-            className="flex items-center border-b-2 border-slate-200 bg-slate-50/70 shrink-0 font-black text-[10px] text-slate-500 uppercase tracking-wider px-3"
+            className="flex items-center border-b border-slate-200 bg-slate-50/80 backdrop-blur-sm shrink-0 font-semibold text-[10px] text-slate-500 uppercase tracking-wider px-3"
             style={{ height: TIMELINE_HEADER_HEIGHT }}
           >
-            <div className="w-12 text-center">WBS</div>
-            <div className="flex-1 min-w-0 pr-4">Nombre de Tarea</div>
-            <div className="w-20 hidden sm:block">Fechas</div>
-            <div className="w-16 hidden sm:block">Resp.</div>
-            <div className="w-12 text-center">Acciones</div>
+            <div className="w-12 text-center font-mono text-[9px]">WBS</div>
+            <div className="flex-1 min-w-0 pr-4 font-display">Nombre de Tarea</div>
+            <div className="w-20 hidden sm:block font-display">Fechas</div>
+            <div className="w-16 hidden sm:block font-display">Resp.</div>
+            <div className="w-32 text-center shrink-0 font-display">Acciones</div>
           </div>
 
           {/* Left Vertical List */}
@@ -462,84 +1141,173 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                 </span>
               </div>
             ) : (
-              tasks.map((task, idx) => {
+              visibleTasks.map((task, idx) => {
                 const isSelected = selectedTaskId === task.id;
+                const styles = getTaskStyles(task);
+                const wbsVal = task?.wbs || '';
+                const dotCount = (wbsVal.match(/\./g) || []).length;
+                const originalIndex = tasks.findIndex(t => t.id === task.id);
                 return (
                   <div
                     key={task.id}
                     onClick={() => setSelectedTaskId(task.id)}
-                    className={`flex items-center px-3 group transition-colors cursor-pointer ${isSelected ? 'bg-slate-50 border-l-4 border-orange-600 pl-[8px]' : 'hover:bg-slate-50/30'
-                      }`}
+                    className={`flex items-center px-3 group transition-all duration-150 cursor-pointer relative border-b border-transparent ${styles.leftPaneBg} ${
+                      isSelected ? 'ring-2 ring-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10 z-10 shadow-sm' : ''
+                    }`}
                     style={{ height: ROW_HEIGHT }}
                   >
                     {/* WBS input */}
-                    <div className="w-12 pr-1.5">
-                      <input
-                        value={task.wbs}
-                        readOnly={isClientView}
-                        onChange={(e) => handleUpdateTaskField(task.id, 'wbs', e.target.value)}
-                        className="w-full text-center text-[11px] font-black text-slate-800 bg-transparent border-none p-0 focus:ring-0 focus:bg-white rounded"
-                      />
+                    <div className="w-12 pr-1.5 shrink-0">
+                      <span className={`inline-block w-full py-0.5 text-center text-[10px] rounded uppercase tracking-wider font-mono ${styles.wbsBadge}`}>
+                        {wbsVal}
+                      </span>
                     </div>
 
-                    {/* Name Input */}
-                    <div className="flex-1 pr-3 min-w-0">
-                      <input
-                        value={task.name}
-                        readOnly={isClientView}
-                        onChange={(e) => handleUpdateTaskField(task.id, 'name', e.target.value)}
-                        className="w-full text-[11px] font-bold text-slate-950 bg-transparent border-none p-0 focus:ring-0 focus:bg-white rounded truncate"
-                      />
-                      {task.notes && (
-                        <p className="text-[8px] text-slate-400 font-semibold truncate mt-0.5">{task.notes}</p>
+                    {/* Name Input with Hierarchical Indentation and Toggle Collapse */}
+                    <div className="flex-1 pr-1 min-w-0 flex items-center gap-1.5" style={{ paddingLeft: `${dotCount * 12}px` }}>
+                      {hasSubtasks(wbsVal) ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCollapsedWbs(prev => ({
+                              ...prev,
+                              [wbsVal]: !prev[wbsVal]
+                            }));
+                          }}
+                          className="p-1 -ml-1 text-slate-500 hover:text-orange-600 hover:bg-slate-100 rounded transition-all shrink-0"
+                          title={collapsedWbs[wbsVal] ? "Expandir" : "Colapsar"}
+                        >
+                          <ChevronDown size={12} className={`transition-transform duration-200 ${collapsedWbs[wbsVal] ? '-rotate-90 text-slate-400' : 'text-slate-700'}`} />
+                        </button>
+                      ) : (
+                        <div className="w-5 h-5 shrink-0" />
                       )}
+
+                      <div className="flex-1 min-w-0">
+                        <input
+                          value={task?.name || ''}
+                          readOnly={isClientView}
+                          onChange={(e) => handleUpdateTaskField(task.id, 'name', e.target.value)}
+                          className={`w-full bg-transparent border-none p-0 focus:ring-1 focus:ring-orange-500/20 focus:bg-white rounded truncate transition-all ${styles.textClass}`}
+                        />
+                        {task?.notes && (
+                          <p className="text-[8px] text-slate-400 font-medium truncate mt-0.5">{task.notes}</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Brief date / details text */}
-                    <div className="w-20 text-[10px] font-extrabold text-slate-500 hidden sm:block">
-                      <div>{new Date(task.start).toLocaleDateString('es-ES', { month: '2-digit', day: 'numeric' })}</div>
-                      <div className="text-[9px] text-orange-600 font-bold">-{new Date(task.end).toLocaleDateString('es-ES', { month: '2-digit', day: 'numeric' })}</div>
+                    <div className="w-20 text-[10px] font-medium text-slate-500 hidden sm:block shrink-0">
+                      <div className="font-bold text-slate-705 font-sans tracking-tight">
+                        {(() => {
+                          if (!task.start) return '-';
+                          const d = new Date(task.start);
+                          return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-ES', { month: '2-digit', day: 'numeric' });
+                        })()}
+                      </div>
+                      {task.start !== task.end ? (
+                        <div className="text-[9px] text-orange-600 font-bold font-sans tracking-tight mt-0.5">
+                          al {(() => {
+                            if (!task.end) return '-';
+                            const d = new Date(task.end);
+                            return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('es-ES', { month: '2-digit', day: 'numeric' });
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="text-[8.5px] text-amber-600 font-extrabold tracking-wider mt-0.5 select-none bg-amber-50 border border-amber-200/50 rounded px-1.5 py-0.5 w-max">HITO</div>
+                      )}
                     </div>
 
                     {/* Responsible label badge */}
-                    <div className="w-16 hidden sm:block">
+                    <div className="w-16 hidden sm:block shrink-0 flex items-center justify-center">
                       {task.responsible ? (
-                        <span className="text-[8px] font-black uppercase bg-slate-105 border border-slate-200 text-slate-600 py-1 px-1.5 rounded-md truncate block max-w-full text-center">
-                          {task.responsible.substring(0, 7)}
-                        </span>
+                        <div 
+                          className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200/60 border border-slate-200/50 py-1 px-1.5 rounded-xl transition-all max-w-full truncate shadow-xs select-none"
+                          title={`Responsable: ${task.responsible}`}
+                        >
+                          <div className="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-orange-400 to-amber-500 text-white font-bold flex items-center justify-center text-[7.5px] shrink-0 font-display">
+                            {getInitials(task.responsible)}
+                          </div>
+                          <span className="text-[8.5px] font-bold text-slate-600 uppercase tracking-tight truncate max-w-[32px]">
+                            {task.responsible}
+                          </span>
+                        </div>
                       ) : (
-                        <span className="text-[8px] font-bold uppercase text-slate-300 py-1 px-1.5 block text-center">
-                          -
-                        </span>
+                        <span className="text-[10px] text-slate-350 font-bold block text-center select-none">-</span>
                       )}
                     </div>
 
                     {/* Re-ordering & operations */}
-                    <div className="w-12 flex justify-center items-center gap-1">
+                    <div className="w-32 flex justify-end items-center gap-1 shrink-0 bg-white/80 p-1 rounded-xl shadow-xs border border-slate-100 transition-all opacity-95 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 sm:focus-within:opacity-100">
                       {!isClientView ? (
                         <>
+                          {/* Subir */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleMoveTaskOrder(originalIndex, 'up'); }}
+                            disabled={originalIndex === 0}
+                            className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg disabled:opacity-20 transition-all"
+                            title="Subir tarea en lista"
+                          >
+                            <ChevronUp size={12} />
+                          </button>
+
+                          {/* Bajar */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleMoveTaskOrder(originalIndex, 'down'); }}
+                            disabled={originalIndex === tasks.length - 1}
+                            className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg disabled:opacity-20 transition-all"
+                            title="Bajar tarea en lista"
+                          >
+                            <ChevronDown size={12} />
+                          </button>
+
+                          {/* Indentar / Anidar */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleIndentTask(task.id); }}
+                            disabled={originalIndex === 0}
+                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg disabled:opacity-20 transition-all"
+                            title="Anidar / Indentar nivel"
+                          >
+                            <ArrowRight size={12} />
+                          </button>
+
+                          {/* Desanidar */}
+                          {dotCount > 0 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleOutdentTask(task.id); }}
+                              className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                              title="Desanidar / Subir nivel"
+                            >
+                              <ArrowRight size={12} className="rotate-180" />
+                            </button>
+                          )}
+
+                          {/* Editar detalles */}
                           <button
                             onClick={(e) => { e.stopPropagation(); openEditModal(task); }}
-                            className="p-1 text-slate-400 hover:text-orange-600 rounded transition-colors"
-                            title="Editar detalles"
+                            className="p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                            title="Editar detalles de tarea"
                           >
-                            <Edit3 size={13} />
+                            <Edit3 size={12} />
                           </button>
+
+                          {/* Eliminar */}
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                            className="p-1 text-slate-300 hover:text-red-500 rounded transition-colors group-hover:opacity-100 opacity-0"
+                            className="p-1 text-slate-350 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                             title="Eliminar tarea"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={12} />
                           </button>
                         </>
                       ) : (
                         <button
                           onClick={(e) => { e.stopPropagation(); openEditModal(task); }}
-                          className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors"
+                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Ver detalles"
                         >
-                          <HelpCircle size={14} />
+                          <HelpCircle size={13} />
                         </button>
                       )}
                     </div>
@@ -552,13 +1320,29 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
 
         {/* Right Side: Horizontal scrolling Gantt Timeline Board */}
         <div
-          className="flex-1 overflow-auto bg-slate-50 relative custom-scrollbar"
-          ref={rightScrollRef}
-          onScroll={handleRightScroll}
+          className={`overflow-auto bg-slate-50 relative custom-scrollbar transition-all duration-300 ${
+            paneMode === 'tasks' ? 'hidden' : 'flex-1'
+          }`}
+          ref={(node) => {
+            if (rightScrollRef) {
+              (rightScrollRef as any).current = node;
+            }
+            if (timelineScrollRef) {
+              if (typeof timelineScrollRef === 'function') {
+                timelineScrollRef(node);
+              } else {
+                (timelineScrollRef as any).current = node;
+              }
+            }
+          }}
+          onScroll={(e) => {
+            handleRightScroll();
+            if (onTimelineScroll) onTimelineScroll(e);
+          }}
         >
           {/* Header Horizontal Row (Weeks, Months, etc.) */}
           <div
-            className="flex border-b-2 border-slate-200 bg-slate-50 sticky top-0 z-30 shrink-0 select-none"
+            className="flex border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-sm sticky top-0 z-30 shrink-0 select-none"
             style={{ height: TIMELINE_HEADER_HEIGHT, width: timelineWidth }}
           >
             {gridColumns.map((col) => (
@@ -567,8 +1351,8 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                 className="absolute border-r border-slate-200 h-full text-center flex flex-col justify-center items-center bg-slate-100/30 shrink-0"
                 style={{ left: col.left, width: columnWidth }}
               >
-                <span className="text-[10px] font-black text-slate-800">{col.label}</span>
-                {col.subLabel && <span className="text-[8px] text-orange-600 font-extrabold uppercase mt-0.5 tracking-tighter">{col.subLabel}</span>}
+                <span className="text-[10px] font-semibold text-slate-700 font-display uppercase tracking-wider">{col.label}</span>
+                {col.subLabel && <span className="text-[8px] text-orange-500 font-bold uppercase mt-0.5 tracking-wide font-mono">{col.subLabel}</span>}
               </div>
             ))}
           </div>
@@ -576,7 +1360,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
           {/* Rows Body Grid */}
           <div
             className="relative bg-slate-50/50"
-            style={{ width: timelineWidth, height: tasks.length * ROW_HEIGHT }}
+            style={{ width: timelineWidth, height: visibleTasks.length * ROW_HEIGHT }}
           >
             {/* Column Background Dividers */}
             {gridColumns.map((col) => (
@@ -590,7 +1374,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
             {/* Dependency drawing SVG layer */}
             <svg
               className="absolute top-0 left-0 pointer-events-none w-full h-full z-10"
-              style={{ width: timelineWidth, height: tasks.length * ROW_HEIGHT + TIMELINE_HEADER_HEIGHT }}
+              style={{ width: timelineWidth, height: visibleTasks.length * ROW_HEIGHT + TIMELINE_HEADER_HEIGHT }}
             >
               <g transform={`translate(0, -${TIMELINE_HEADER_HEIGHT})`}>
                 {dependencyLines}
@@ -598,10 +1382,11 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
             </svg>
 
             {/* Task rows */}
-            {tasks.map((task, index) => {
+            {visibleTasks.map((task, index) => {
               const xStart = getXFromDate(task.start);
               const barWidth = getWidthFromDates(task.start, task.end);
               const isSelected = selectedTaskId === task.id;
+              const styles = getTaskStyles(task);
 
               return (
                 <div
@@ -611,61 +1396,116 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                   style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}
                 >
                   {/* Interactive Gantt Bar */}
-                  {barWidth > 0 && (
+                  {styles.isMilestone ? (
                     <div
-                      style={{ left: xStart, width: barWidth }}
-                      className={`absolute h-8 rounded-xl z-20 flex items-center shadow-lg transition-all group/bar select-none ${isSelected
-                        ? 'ring-2 ring-orange-500 shadow-orange-100'
-                        : ''
-                        } ${isClientView ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
+                      style={{ left: xStart - 8, width: 16 }}
+                      className={`absolute h-4 w-4 rotate-45 z-20 shadow-md transition-all cursor-grab active:cursor-grabbing select-none ${
+                        styles.milestoneClass || 'bg-amber-500 hover:bg-amber-400 border-2 border-amber-600'
+                      } ${
+                        isSelected ? 'ring-2 ring-orange-500 shadow-orange-100 scale-110' : ''
+                      }`}
                       onMouseDown={(e) => handleDragStart(e, task.id, 'move')}
+                      title="Hito de Entrega - Arrastrar para cambiar fecha"
                     >
-                      {/* Bar Fill Backdrop */}
-                      <div className="absolute inset-0 bg-slate-900 rounded-xl overflow-hidden shadow-inner flex items-center">
-                        {/* Progress Colored Fill */}
-                        <div
-                          style={{ width: `${task.progress}%` }}
-                          className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-l-md opacity-90 transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Handle Left resize */}
-                      {!isClientView && (
-                        <div
-                          className="absolute left-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-w-resize rounded-l-xl z-30 transition-colors"
-                          onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-start'); }}
-                        />
-                      )}
-
-                      {/* Task Info Overlay Text inside bar */}
-                      <div className="absolute inset-0 px-3 flex items-center justify-between text-white text-[9px] font-black uppercase tracking-wider pointer-events-none w-full truncate">
-                        <span className="truncate max-w-[80%] pr-2">{task.name}</span>
-                        <span>{task.progress}%</span>
-                      </div>
-
-                      {/* Display handle progress indicator or drag points */}
-                      {!isClientView && (
-                        <div
-                          className="absolute h-3 w-3 bg-white border-2 border-orange-600 rounded-full cursor-col-resize opacity-0 group-hover/bar:opacity-100 z-30 transition-opacity -bottom-1 shadow-sm"
-                          style={{ left: `${task.progress}%`, transform: 'translateX(-50%)' }}
-                          onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'progress'); }}
-                          title="Arrastrar progreso"
-                        />
-                      )}
-
-                      {/* Handle Right resize */}
-                      {!isClientView && (
-                        <div
-                          className="absolute right-0 top-0 bottom-0 w-2 hover:bg-white/20 cursor-e-resize rounded-r-xl z-30 transition-colors"
-                          onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-end'); }}
-                        />
-                      )}
-
-                      {/* Label label displayed to the right side of the Gantt bar */}
-                      <span className="absolute left-[105%] whitespace-nowrap text-[9px] font-black text-slate-400 group-hover/bar:text-slate-800 transition-colors bg-white/70 py-1 px-1.5 rounded-md border border-slate-100 shadow-sm uppercase">
-                        {task.responsible || 'Sin Asignar'}
+                      {/* Label label displayed to the right side of the Milestone */}
+                      <span className={`absolute left-[180%] -top-1 px-2 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-wider whitespace-nowrap shadow-sm select-none pointer-events-none ${
+                        styles.leftPaneBg.includes('bg-') ? styles.leftPaneBg.split(' ')[0] + ' ' + styles.leftPaneBg.split(' ').find(x => x.includes('border-')) : 'bg-amber-50 border-amber-200 text-amber-950'
+                      } bg-white/95`}>
+                        💎 {task.name}
                       </span>
                     </div>
+                  ) : (
+                    barWidth > 0 && (
+                      <div
+                        style={{ left: xStart, width: barWidth }}
+                        className={`absolute h-8 rounded-xl z-20 flex items-center shadow-md transition-all group/bar select-none ${isSelected
+                          ? 'ring-2 ring-orange-500 shadow-orange-100'
+                          : ''
+                          } ${isClientView || hasSubtasks(task.wbs) ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-lg'}`}
+                        onMouseDown={(e) => { if (!hasSubtasks(task.wbs)) handleDragStart(e, task.id, 'move'); }}
+                      >
+                        {/* Bar Fill Backdrop */}
+                        <div className={`absolute inset-0 rounded-xl overflow-hidden shadow-inner flex items-center ${
+                          styles.isChapter || hasSubtasks(task.wbs) ? 'bg-slate-900 border border-slate-700' : 'bg-slate-100/10 border'
+                        } ${styles.leftPaneBg.includes('border-') ? styles.leftPaneBg.split(' ').find(x => x.includes('border-')) : 'border-slate-300'}`}>
+                          {/* Progress Colored Fill */}
+                          <div
+                            style={{ width: `${task.progress}%` }}
+                            className={`h-full ${styles.progressBg} rounded-l-md opacity-90 transition-all duration-300`}
+                          />
+
+                          {/* Traditional Summary task hangers */}
+                          {(styles.isChapter || hasSubtasks(task.wbs)) && (
+                            <>
+                              <div className="absolute left-0 bottom-0 w-2.5 h-2.5 bg-slate-900 transform rotate-45 translate-y-1.5" />
+                              <div className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-slate-900 transform rotate-45 translate-y-1.5" />
+                            </>
+                          )}
+                        </div>
+
+                        {/* Interactive Left resize touch-point (visual grip handle & wide click hover zone) */}
+                        {!isClientView && !styles.isChapter && !hasSubtasks(task.wbs) && (
+                          <>
+                            {/* Visual vertical rib-marks for grab indication */}
+                            <div className="absolute left-1.5 top-2 bottom-2 w-0.5 bg-indigo-205/50 rounded-full opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none" />
+                            <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-indigo-205/50 rounded-full opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none" />
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-5 hover:bg-white/20 hover:border-l-4 hover:border-indigo-600 cursor-w-resize rounded-l-xl z-30 transition-all"
+                              onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-start'); }}
+                              title="Arrastrar para acortar o alargar desde el inicio (modificar duración)"
+                            />
+                          </>
+                        )}
+
+                         {/* Task Info Overlay Text inside bar */}
+                        <div className={`absolute inset-0 px-4 flex items-center justify-between text-[9px] font-black uppercase tracking-wider pointer-events-none w-full truncate ${
+                          styles.isChapter || hasSubtasks(task.wbs) ? 'text-white' : 'text-slate-900'
+                        }`}>
+                          {barWidth >= 135 || styles.isChapter || hasSubtasks(task.wbs) ? (
+                            <>
+                              <span className="truncate max-w-[80%] pr-2">
+                                {styles.isChapter || hasSubtasks(task.wbs) ? `📂 ${task.name}` : task.name}
+                              </span>
+                              <span>{task.progress}%</span>
+                            </>
+                          ) : null}
+                        </div>
+
+                        {/* Floating Task Label appended to the right of the bar if too narrow */}
+                        {barWidth < 135 && !styles.isChapter && !hasSubtasks(task.wbs) && (
+                          <div className="absolute left-[103%] top-0 bottom-0 flex items-center whitespace-nowrap overflow-visible pointer-events-none select-none z-30">
+                            <span className="text-[9px] font-extrabold text-slate-700 bg-white/90 border border-slate-200/60 px-2 py-0.5 rounded-lg shadow-xs backdrop-blur-xs flex items-center gap-1">
+                              <span>{task.name}</span>
+                              <span className="text-orange-600 font-black">({task.progress}%)</span>
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Display handle progress indicator or drag points */}
+                        {!isClientView && !styles.isChapter && !hasSubtasks(task.wbs) && (
+                          <div
+                            className="absolute h-3.5 w-3.5 bg-white border-2 border-orange-600 rounded-full cursor-col-resize opacity-0 group-hover/bar:opacity-100 z-30 transition-opacity -bottom-1 shadow-md"
+                            style={{ left: `${task.progress}%`, transform: 'translateX(-50%)' }}
+                            onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'progress'); }}
+                            title="Arrastrar progreso"
+                          />
+                        )}
+
+                        {/* Interactive Right resize touch-point (visual grip handle & wide click hover zone) */}
+                        {!isClientView && !styles.isChapter && !hasSubtasks(task.wbs) && (
+                          <>
+                            {/* Visual vertical rib-marks for grab indication */}
+                            <div className="absolute right-1.5 top-2 bottom-2 w-0.5 bg-indigo-205/50 rounded-full opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none" />
+                            <div className="absolute right-2 top-2 bottom-2 w-0.5 bg-indigo-205/50 rounded-full opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none" />
+                            <div
+                              className="absolute right-0 top-0 bottom-0 w-5 hover:bg-white/20 hover:border-r-4 hover:border-indigo-600 cursor-e-resize rounded-r-xl z-30 transition-all"
+                              onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e, task.id, 'resize-end'); }}
+                              title="Arrastrar para acortar o alargar desde el fin (modificar duración)"
+                            />
+                          </>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               );
@@ -675,24 +1515,225 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
       </div>
 
       {/* Editing Task Side drawer or Modal */}
-      {isEditingModalOpen && editingTask && (
+      {isEditingModalOpen && editingTask && (() => {
+        const isEditingTaskContainer = tasks.some(t => t && t.wbs && t.wbs.startsWith(`${editingTask.wbs}.`));
+
+        // Format dates inside modal
+        const formatToShow = (dateStr: string) => {
+          const d = new Date(dateStr);
+          if (isNaN(d.getTime())) return '-';
+          return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        };
+
+        // Compute Semana de Inicio (1-based index from projectStart)
+        const sDate = new Date(editingTask.start);
+        const pStart = new Date(projectStart);
+        let startWeekVal = 1;
+        if (!isNaN(sDate.getTime()) && !isNaN(pStart.getTime())) {
+          const diffDays = (sDate.getTime() - pStart.getTime()) / (1000 * 60 * 60 * 24);
+          startWeekVal = Math.round((diffDays / 7 + 1) * 10) / 10;
+        }
+
+        // Compute Duración en Semanas
+        let durationWeeksVal = 1;
+        if (editingTask.start === editingTask.end) {
+          durationWeeksVal = 0;
+        } else {
+          const eDate = new Date(editingTask.end);
+          if (!isNaN(sDate.getTime()) && !isNaN(eDate.getTime())) {
+            const diffDays = (eDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24) + 1;
+            durationWeeksVal = Math.round((diffDays / 7) * 10) / 10;
+          }
+        }
+
+        const updateTaskDates = (newStartWeek: number, newDurWeeks: number) => {
+          const pStart = new Date(projectStart);
+          pStart.setHours(0, 0, 0, 0);
+          
+          const startOffsetDays = (newStartWeek - 1) * 7;
+          const newStartD = new Date(pStart.getTime() + startOffsetDays * 24 * 60 * 60 * 1000);
+          
+          let newEndD: Date;
+          if (newDurWeeks <= 0) {
+            newEndD = new Date(newStartD.getTime());
+          } else {
+            const durationDays = newDurWeeks * 7;
+            newEndD = new Date(newStartD.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000);
+          }
+          
+          setEditingTask({
+            ...editingTask,
+            start: newStartD.toISOString().split('T')[0],
+            end: newEndD.toISOString().split('T')[0]
+          });
+        };
+
+        const handleStartWeekChange = (val: number) => {
+          const clamped = Math.max(1, val);
+          updateTaskDates(clamped, durationWeeksVal);
+        };
+
+        const handleDurationWeeksChange = (val: number) => {
+          const clamped = Math.max(0, val);
+          updateTaskDates(startWeekVal, clamped);
+        };
+
+        return (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl w-full max-w-lg border border-slate-100 space-y-6">
+          <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl w-full max-w-lg border border-slate-100 space-y-5 overflow-y-auto max-h-[95vh] custom-scrollbar">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide">Configurar Tarea</h3>
-                <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">WBS: {editingTask.wbs}</p>
+                <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">Código WBS: {editingTask.wbs}</p>
               </div>
               <span className="px-3 py-1.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-xl text-[10px] font-black uppercase tracking-wider">
                 {editingTask.progress}% Completado
               </span>
             </div>
 
+            {/* Custom Warning message for Container Tasks */}
+            {isEditingTaskContainer && (
+              <div className="bg-indigo-50/75 border border-indigo-100 p-4 rounded-2xl flex items-start gap-2.5">
+                <CheckCircle2 size={14} className="text-indigo-600 mt-0.5 shrink-0 animate-pulse" />
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-indigo-950 uppercase tracking-wider">Duración y Progreso Automáticos</p>
+                  <p className="text-[8.5px] font-bold text-slate-500 leading-relaxed uppercase">
+                    Este elemento es un contenedor/capítulo con sub-tareas. Sus fechas y porcentaje se resumen de forma automática.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Custom Tab toggle to convert to Milestone (Hito) vs Standard Task */}
+            {!isClientView && !isEditingTaskContainer && (
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1.5 text-amber-600">
+                  💎 Tipo de Elemento
+                </label>
+                <div className="grid grid-cols-2 bg-slate-100 p-1 rounded-2xl gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Set as Milestone: End date becomes identical to Start date
+                      setEditingTask({
+                        ...editingTask,
+                        end: editingTask.start,
+                        progress: editingTask.progress || 0
+                      });
+                    }}
+                    className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
+                      editingTask.start === editingTask.end
+                        ? 'bg-amber-500 text-slate-950 shadow-sm border border-amber-400 font-extrabold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🔹 Hito de Entrega
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Set as Standard Task with duration (add 1 day if dates were same)
+                      const startD = new Date(editingTask.start || new Date());
+                      const validStart = isNaN(startD.getTime()) ? new Date() : startD;
+                      let newEnd = editingTask.end;
+                      if (!editingTask.end || editingTask.start === editingTask.end) {
+                        const endD = new Date(validStart.getTime() + 24 * 60 * 60 * 1000);
+                        newEnd = endD.toISOString().split('T')[0];
+                      }
+                      setEditingTask({
+                        ...editingTask,
+                        end: newEnd
+                      });
+                    }}
+                    className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
+                      editingTask.start !== editingTask.end
+                        ? 'bg-slate-900 text-white shadow-sm font-extrabold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    📊 Tarea con Duración
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Parent Chapter Selection for Nesting */}
+            {!isClientView && editingTask.wbs && (
+              editingTask.wbs.includes('.') ? (
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1"><BookOpen size={10} /> Fase o Capítulo Padre</label>
+                  <select
+                    value={editingTask.wbs.split('.')[0]}
+                    onChange={(e) => {
+                      const newParentWbs = e.target.value;
+                      const prefix = `${newParentWbs}.`;
+                      const siblings = tasks.filter(t => t && t.id !== editingTask.id && t.wbs && t.wbs.startsWith(prefix));
+                      const nextIndex = siblings.length + 1;
+                      setEditingTask({
+                        ...editingTask,
+                        wbs: `${newParentWbs}.${nextIndex}`
+                      });
+                    }}
+                    className="w-full bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner cursor-pointer"
+                  >
+                    {tasks.filter(t => t && t.wbs && !t.wbs.includes('.')).map(ch => (
+                      <option key={ch.id} value={ch.wbs}>📂 {ch.wbs} - {ch.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1">Estructura Jerencial</label>
+                  <div className="bg-slate-50 p-3 rounded-2xl text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    📂 Tarea Raíz (Sección Principal/Capítulo)
+                  </div>
+                </div>
+              )
+            )}
+
+            {/* Color Override Preset Selection */}
+            {!isClientView && (
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1">Color de Línea / Hito</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  {[
+                    { key: '', name: 'Tema Capítulo' },
+                    { key: 'indigo', bg: 'bg-indigo-500', border: 'border-indigo-600' },
+                    { key: 'teal', bg: 'bg-teal-555', border: 'border-teal-600' },
+                    { key: 'amber', bg: 'bg-amber-500', border: 'border-amber-600' },
+                    { key: 'purple', bg: 'bg-purple-500', border: 'border-purple-600' },
+                    { key: 'sky', bg: 'bg-sky-500', border: 'border-sky-600' },
+                    { key: 'rose', bg: 'bg-rose-500', border: 'border-rose-600' },
+                    { key: 'red', bg: 'bg-red-500', border: 'border-red-600' },
+                    { key: 'orange', bg: 'bg-orange-500', border: 'border-orange-600' },
+                    { key: 'green', bg: 'bg-green-500', border: 'border-green-600' },
+                    { key: 'blue', bg: 'bg-blue-500', border: 'border-blue-600' },
+                  ].map(option => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => setEditingTask({ ...editingTask, color: option.key })}
+                      className={`h-6 text-[8px] font-extrabold uppercase rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 ${
+                        option.key === ''
+                          ? `px-3.5 bg-slate-200 text-slate-700 border border-slate-300 hover:bg-slate-300 ${
+                              !editingTask.color ? 'ring-2 ring-orange-500' : ''
+                            }`
+                          : `w-6 h-6 rounded-full ${option.bg} border-2 ${
+                              editingTask.color === option.key ? 'ring-2 ring-orange-500 border-white scale-110 shadow-md' : 'border-transparent opacity-80 hover:opacity-100'
+                            }`
+                      }`}
+                      title={option.name || option.key}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1">Nombre</label>
                 <input
-                  value={editingTask.name}
+                  value={editingTask.name || ''}
                   disabled={isClientView}
                   onChange={(e) => setEditingTask({ ...editingTask, name: e.target.value })}
                   className="w-full bg-slate-50 border-none rounded-2xl text-[12px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner"
@@ -703,39 +1744,71 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1">Progreso (%)</label>
                 <input
                   type="number" min="0" max="100"
-                  value={editingTask.progress}
-                  disabled={isClientView}
+                  value={editingTask.progress ?? 0}
+                  disabled={isClientView || editingTask.start === editingTask.end || isEditingTaskContainer}
                   onChange={(e) => setEditingTask({ ...editingTask, progress: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
-                  className="w-full bg-slate-50 border-none rounded-2xl text-[12px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner"
+                  className="w-full bg-slate-50 border-none rounded-2xl text-[12px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner disabled:opacity-40"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1.5"><Calendar size={12} /> Fecha Inicio</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1.5"><Calendar size={12} /> Semana Inicio</label>
                 <input
-                  type="date"
-                  value={editingTask.start}
-                  disabled={isClientView}
-                  onChange={(e) => setEditingTask({ ...editingTask, start: e.target.value })}
-                  className="w-full bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner"
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={startWeekVal}
+                  disabled={isClientView || isEditingTaskContainer}
+                  onChange={(e) => handleStartWeekChange(parseFloat(e.target.value) || 1)}
+                  className="w-full bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1.5"><Calendar size={12} /> Fecha Fin</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1.5"><Clock size={12} /> Duración (Semanas)</label>
                 <input
-                  type="date"
-                  value={editingTask.end}
-                  disabled={isClientView}
-                  onChange={(e) => setEditingTask({ ...editingTask, end: e.target.value })}
-                  className="w-full bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={durationWeeksVal}
+                  disabled={isClientView || editingTask.start === editingTask.end || isEditingTaskContainer}
+                  onChange={(e) => handleDurationWeeksChange(parseFloat(e.target.value) || 0)}
+                  className="w-full bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:ring-2 focus:ring-orange-600 py-3 px-4 shadow-inner disabled:opacity-50"
                 />
+                {editingTask.start === editingTask.end && (
+                  <span className="text-[8px] text-amber-600 font-bold block ml-1 uppercase">Hitos tienen duración de 0 semanas</span>
+                )}
+              </div>
+
+              {/* Fechas Calculadas Info Panel */}
+              <div className="col-span-1 sm:col-span-2 bg-slate-50 border border-slate-100 p-4 rounded-2xl flex flex-col gap-1.5 text-[10px] uppercase font-black tracking-wider text-slate-500">
+                <div className="flex justify-between items-center text-slate-400">
+                  <span>📅 Inicio del Proyecto:</span>
+                  <span className="text-slate-700 font-bold">{formatToShow(projectStart.toISOString().split('T')[0])}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>📅 Inicio de Tarea (calc):</span>
+                  <span className="text-slate-800 font-bold">{formatToShow(editingTask.start)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>📅 Fin de Tarea (calc):</span>
+                  <span className="text-slate-800 font-bold">{formatToShow(editingTask.end)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60">
+                  <span>⏱️ Duración Calculada:</span>
+                  <span className="text-orange-600 font-extrabold">
+                    {editingTask.start === editingTask.end 
+                      ? "0 DÍAS (HITO)" 
+                      : `${Math.round(((new Date(editingTask.end).getTime() - new Date(editingTask.start).getTime()) / (1000 * 60 * 60 * 24) + 1) * 10) / 10} DÍAS (SEMANAS RESTRIGIDAS)`
+                    }
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-1 flex items-center gap-1.5"><User size={12} /> Responsable</label>
                 <select
-                  value={editingTask.responsible}
+                  value={editingTask.responsible || ''}
                   disabled={isClientView}
                   onChange={(e) => {
                     const r = resources.find(res => res.name === e.target.value);
@@ -774,7 +1847,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                           }}
                           className="rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
                         />
-                        <span>{t.wbs} - {t.name}</span>
+                        <span>{t.wbs || ''} - {t.name}</span>
                       </label>
                     );
                   })}
@@ -815,7 +1888,8 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
