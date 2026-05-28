@@ -1013,7 +1013,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                 className="p-1.5 hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition-all flex items-center gap-1.5 shrink-0 shadow-xs hover:scale-[1.01]"
                 title="Mostrar Equipo de Trabajo"
               >
-                <Users size={12} className="text-orange-600 animate-pulse" />
+                <Users size={12} className="text-orange-600" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Equipo</span>
               </button>
             )}

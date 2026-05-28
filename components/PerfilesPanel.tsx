@@ -154,7 +154,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
 
           {profileRates.length === 0 && (
             <div className="col-span-full p-16 text-center border border-dashed border-slate-200 rounded-3xl bg-white flex flex-col items-center justify-center space-y-4 shadow-sm">
-              <Users className="text-slate-355 animate-bounce" size={32} />
+              <Users className="text-slate-355" size={32} />
               <div className="space-y-1">
                 <p className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">No hay perfiles definidos</p>
                 <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Añade perfiles para calcular los costes proyectados.</p>
