@@ -1418,24 +1418,33 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                     barWidth > 0 && (
                       <div
                         style={{ left: xStart, width: barWidth }}
-                        className={`absolute h-8 rounded-xl z-20 flex items-center shadow-md transition-all group/bar select-none ${isSelected
-                          ? 'ring-2 ring-orange-500 shadow-orange-100'
-                          : ''
-                          } ${isClientView || hasSubtasks(task.wbs) ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-lg'}`}
+                        className={`absolute h-8 rounded-xl z-20 flex items-center transition-all group/bar select-none ${
+                          isSelected && !((styles.isChapter || hasSubtasks(task.wbs)) && barWidth < 135)
+                            ? 'ring-2 ring-orange-500 shadow-orange-100'
+                            : ''
+                        } ${
+                          (styles.isChapter || hasSubtasks(task.wbs)) && barWidth < 135
+                            ? 'shadow-none'
+                            : 'shadow-md'
+                        } ${isClientView || hasSubtasks(task.wbs) ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-lg'}`}
                         onMouseDown={(e) => { if (!hasSubtasks(task.wbs)) handleDragStart(e, task.id, 'move'); }}
                       >
                         {/* Bar Fill Backdrop */}
-                        <div className={`absolute inset-0 rounded-xl overflow-hidden shadow-inner flex items-center ${
-                          styles.isChapter || hasSubtasks(task.wbs) ? 'bg-slate-900 border border-slate-700' : 'bg-slate-100/10 border'
+                        <div className={`absolute inset-0 rounded-xl overflow-hidden flex items-center ${
+                          styles.isChapter || hasSubtasks(task.wbs)
+                            ? (barWidth < 135 ? 'bg-transparent border-none shadow-none text-transparent' : 'bg-slate-900 border border-slate-700 shadow-inner')
+                            : 'bg-slate-100/10 border'
                         } ${styles.leftPaneBg.includes('border-') ? styles.leftPaneBg.split(' ').find(x => x.includes('border-')) : 'border-slate-300'}`}>
                           {/* Progress Colored Fill */}
                           <div
                             style={{ width: `${task.progress}%` }}
-                            className={`h-full ${styles.progressBg} rounded-l-md opacity-90 transition-all duration-300`}
+                            className={`h-full ${styles.progressBg} rounded-l-md opacity-90 transition-all duration-300 ${
+                              (styles.isChapter || hasSubtasks(task.wbs)) && barWidth < 135 ? 'hidden' : ''
+                            }`}
                           />
 
                           {/* Traditional Summary task hangers */}
-                          {(styles.isChapter || hasSubtasks(task.wbs)) && (
+                          {(styles.isChapter || hasSubtasks(task.wbs)) && barWidth >= 135 && (
                             <>
                               <div className="absolute left-0 bottom-0 w-2.5 h-2.5 bg-slate-900 transform rotate-45 translate-y-1.5" />
                               <div className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-slate-900 transform rotate-45 translate-y-1.5" />
@@ -1476,11 +1485,11 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                           <div className="absolute left-[103%] top-0 bottom-0 flex items-center whitespace-nowrap overflow-visible pointer-events-none select-none z-30 animate-in fade-in duration-300">
                             <span className={`text-[9.5px] font-black ${
                               styles.isChapter || hasSubtasks(task.wbs)
-                                ? 'text-slate-900 bg-slate-100/95 border border-slate-350 shadow-sm'
+                                ? 'text-white bg-slate-900 border border-slate-800 shadow-md shadow-black/20'
                                 : 'text-slate-700 bg-white/95 border border-slate-200 shadow-xs'
                             } px-2.5 py-1 rounded-xl flex items-center gap-1.5 backdrop-blur-xs`}>
                               <span>{styles.isChapter || hasSubtasks(task.wbs) ? `📂 ${task.name}` : task.name}</span>
-                              <span className="text-orange-600 font-black">({task.progress}%)</span>
+                              <span className="text-orange-500 font-extrabold">({task.progress}%)</span>
                             </span>
                           </div>
                         )}
