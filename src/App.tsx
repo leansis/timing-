@@ -235,6 +235,19 @@ export default function App() {
     };
   }, [activeSection, showJornadas, ganttScrollRef.current, jornadasScrollRef.current]);
 
+  // Update browser tab title based on the active section
+  useEffect(() => {
+    const sectionNames: Record<typeof activeSection, string> = {
+      gantt: 'Plan de Trabajo',
+      equipo: 'Equipo',
+      perfiles: 'Perfiles Maestro',
+      facturacion: 'Facturación',
+      configuracion: 'Configuración'
+    };
+    const currentName = sectionNames[activeSection] || 'Inicio';
+    document.title = `${currentName} | Timing`;
+  }, [activeSection]);
+
   // Listen to Firebase sign-in state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
