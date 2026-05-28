@@ -793,7 +793,7 @@ export default function App() {
       <header className="min-h-[64px] py-2.5 lg:py-0 lg:h-[64px] shrink-0 border-b border-slate-950/80 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col lg:flex-row items-stretch lg:items-center justify-between px-4 md:px-6 z-40 select-none shadow-xl gap-3 lg:gap-0">
         
         {/* Logo and project name input */}
-        <div className="flex flex-wrap items-center gap-2.5 md:gap-4 flex-1 min-w-0 pr-0 lg:pr-4 justify-between lg:justify-start">
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 md:gap-3 flex-1 min-w-0 pr-0 lg:pr-4 justify-between lg:justify-start">
           {/* Brand Logo with display typography */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 rounded-xl font-display font-black text-xs sm:text-sm tracking-wide shrink-0 shadow-lg shadow-orange-600/10 border border-orange-400/20 hover:brightness-105 transition-all select-none">
             <FolderKanban size={14} className="text-white shrink-0" />
@@ -801,17 +801,17 @@ export default function App() {
           </div>
 
           {/* Unified Project Switcher & Renamer */}
-          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/20 transition-all shrink-0 max-w-sm">
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/20 transition-all shrink-0 max-w-[280px] sm:max-w-xs md:max-w-sm">
             {/* Project dropdown selector */}
             <div className="flex items-center gap-1 bg-white/5 border-r border-white/10 shrink-0 select-none pl-2.5 pr-1 py-1.5">
               <CloudLightning size={12} className="text-orange-500 shrink-0" />
               <select
                 value={currentProjectId || ''}
                 onChange={(e) => setCurrentProjectId(e.target.value)}
-                className="bg-transparent border-none text-[10px] font-extrabold font-mono focus:ring-0 cursor-pointer text-slate-200 p-0 pr-4 uppercase tracking-wider focus:outline-none"
+                className="bg-transparent border-none text-[10px] font-extrabold font-mono focus:ring-0 cursor-pointer text-slate-200 p-0 pr-4 uppercase tracking-wider focus:outline-none max-w-[90px] sm:max-w-[120px] md:max-w-[155px] truncate"
               >
                 {projects.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-slate-950 text-slate-200 py-1 font-sans font-bold">
+                  <option key={p.id} value={p.id} className="bg-slate-950 text-slate-200 py-1 font-sans font-bold animate-none">
                     {p.title.toUpperCase()}
                   </option>
                 ))}
@@ -831,11 +831,11 @@ export default function App() {
                   }, 1500);
                 }}
                 onSubmit={() => triggerCloudSave(projectTitle)}
-                placeholder="Editar título..."
-                className="bg-transparent border-none text-[10.5px] font-extrabold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0 px-2.5 py-1.5 w-32 truncate uppercase tracking-wider font-display"
+                placeholder="EDITAR TÍTULO..."
+                className="bg-transparent border-none text-[10.5px] font-extrabold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0 px-2.5 py-1.5 w-24 sm:w-28 md:w-32 truncate uppercase tracking-wider font-display"
               />
             ) : (
-              <span className="text-[10.5px] font-extrabold text-slate-300 px-2.5 py-1.5 w-32 truncate select-none uppercase tracking-wider font-display">
+              <span className="text-[10.5px] font-extrabold text-slate-300 px-2.5 py-1.5 w-24 sm:w-28 md:w-32 truncate select-none uppercase tracking-wider font-display">
                 {projectTitle}
               </span>
             )}
@@ -865,7 +865,7 @@ export default function App() {
         </div>
 
         {/* Sync, Share, and Sign-out Actions */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0 justify-between lg:justify-end border-t border-white/5 pt-2.5 lg:pt-0 lg:border-t-0">
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-4 shrink-0 justify-between lg:justify-end border-t border-white/5 pt-2.5 lg:pt-0 lg:border-t-0">
           
           {/* Cloud Saving indicators */}
           <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
