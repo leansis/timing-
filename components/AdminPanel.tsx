@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { ProjectResource, ResourceAllocation, ProfileRate, ViewMode, Invoice } from '@/src/types';
 import {
-  Info, DollarSign, Plus, Trash2, BarChart3, ChevronLeft, ChevronRight,
+  Info, Euro, Plus, Trash2, BarChart3, ChevronLeft, ChevronRight,
   Calendar as CalendarIcon, Settings2, Target, ToggleLeft, ToggleRight,
   Clock, UserPlus, Users, Download, Upload, FileSpreadsheet, Eye, Minus
 } from 'lucide-react';
@@ -359,7 +359,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="max-w-4xl mx-auto space-y-12">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[13px] font-black text-slate-800 uppercase flex items-center gap-3 tracking-[0.2em]">
-                    <DollarSign className="text-orange-600" size={18} /> Plan de Facturación Proyectado
+                    <Euro className="text-orange-600" size={18} /> Plan de Facturación Proyectado
                   </h3>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
@@ -755,7 +755,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
-                      <DollarSign size={80} className="text-orange-600" />
+                      <Euro size={80} className="text-orange-600" />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-[0.2em]">Presupuesto Proyectado</p>
                     <div className="flex items-baseline gap-2">

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Invoice, ProjectResource, ProfileRate, ResourceAllocation } from '@/src/types';
-import { DollarSign, FileSpreadsheet, Plus, Target, Trash2, Minus, Info } from 'lucide-react';
+import { Euro, FileSpreadsheet, Plus, Target, Trash2, Minus, Info } from 'lucide-react';
 
 interface FacturacionPanelProps {
   invoices: Invoice[];
@@ -92,7 +92,7 @@ export const FacturacionPanel: React.FC<FacturacionPanelProps> = ({
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800 flex items-center gap-2.5 font-display">
-              <DollarSign className="text-orange-500" size={20} /> Facturación y Certificaciones
+              <Euro className="text-orange-500" size={20} /> Facturación y Certificaciones
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1 select-none">
               Controla las metas financieras, distribuye la facturación anual en hitos mensuales o añade facturaciones personalizadas.

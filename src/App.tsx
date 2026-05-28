@@ -34,7 +34,7 @@ import {
   Cloud, CloudLightning, LogOut, FolderKanban, Plus, Trash2,
   Share2, Save, Sparkles, Code2, Users, HardDriveUpload, Download,
   CheckCircle, Hammer, ChevronLeft, ChevronRight, Activity, AlertTriangle,
-  Calendar, DollarSign, Settings2, FileSpreadsheet, ListCollapse
+  Calendar, Euro, Settings2, FileSpreadsheet, ListCollapse
 } from 'lucide-react';
 
 const getMondayOfNextWeek = (): string => {
@@ -954,7 +954,7 @@ export default function App() {
               { id: 'gantt', label: 'Plan de Trabajo', icon: Calendar, subtitle: 'Gantt & Jornadas' },
               { id: 'equipo', label: 'Equipo', icon: Users, subtitle: 'Miembros de Trabajo' },
               { id: 'perfiles', label: 'Perfiles Maestro', icon: FileSpreadsheet, subtitle: 'Tarifas de Roles' },
-              { id: 'facturacion', label: 'Facturación', icon: DollarSign, subtitle: 'Hitos de Cobro' },
+              { id: 'facturacion', label: 'Facturación', icon: Euro, subtitle: 'Hitos de Cobro' },
               { id: 'configuracion', label: 'Configuración', icon: Settings2, subtitle: 'Parámetros Timing' },
             ].map((section) => {
               const Icon = section.icon;

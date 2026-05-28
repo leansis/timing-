@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProfileRate } from '@/src/types';
-import { Plus, Trash2, Users, Receipt, ShieldAlert } from 'lucide-react';
+import { Plus, Trash2, Users, Euro, ShieldAlert } from 'lucide-react';
 
 interface PerfilesPanelProps {
   profileRates: ProfileRate[];
@@ -32,7 +32,9 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
     if (isClientView) return;
     onUpdateRates(profileRates.filter((_, i) => i !== index));
     setConfirmingIdx(null);
-  };  return (
+  };
+
+  return (
     <div className="flex-1 bg-slate-50/40 p-5 md:p-8 xl:p-10 overflow-y-auto custom-scrollbar">
       <div className="max-w-7xl mx-auto space-y-8">
         
@@ -40,7 +42,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800 flex items-center gap-2.5 font-display">
-              <Users className="text-orange-500" size={20} /> Tarifas de Perfiles Profesionales
+              <Users className="text-slate-700" size={20} /> Tarifas de Perfiles Profesionales
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1 select-none">
               Administra los roles de tu equipo y asocia el coste diario en euros para evaluar el presupuesto proyectado.
@@ -50,7 +52,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
           {!isClientView && (
             <button
               onClick={handleAddRole}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:brightness-[1.05] text-white rounded-xl text-xs font-semibold transition-all uppercase tracking-wider shadow-md shadow-orange-500/10 hover:scale-[1.01]"
+              className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all uppercase tracking-wider shadow-md shadow-slate-900/10 hover:scale-[1.01]"
             >
               <Plus size={15} /> Añadir Nuevo Perfil
             </button>
@@ -74,8 +76,8 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
             >
               <div className="space-y-4">
                 {/* Visual Icon Header */}
-                <div className="w-9 h-9 rounded-xl bg-orange-500/5 border border-orange-500/10 flex items-center justify-center">
-                  <Receipt className="text-orange-500" size={16} />
+                <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 transition-colors group-hover:text-slate-800 group-hover:bg-slate-100/50">
+                  <Euro size={15} className="stroke-[2.5]" />
                 </div>
 
                 <div className="space-y-3.5">
@@ -87,7 +89,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
                       value={rate.role}
                       readOnly={isClientView}
                       onChange={(e) => handleUpdateRole(idx, { role: e.target.value })}
-                      className="w-full bg-slate-50/70 border border-slate-200/40 rounded-xl text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-orange-500/20 focus:border-orange-500/50 focus:bg-white py-2.5 px-3.5 transition-all"
+                      className="w-full bg-slate-50/70 border border-slate-200/40 rounded-xl text-[11.5px] font-semibold text-slate-800 focus:ring-2 focus:ring-slate-100 focus:border-slate-400 focus:bg-white py-2 px-3 transition-all"
                       placeholder="Ej: Programador JavaScript"
                     />
                   </div>
@@ -97,7 +99,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
                       Tarifa Diaria (€)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold font-mono">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-bold font-mono">
                         €
                       </span>
                       <input
@@ -105,7 +107,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
                         value={rate.rate}
                         readOnly={isClientView}
                         onChange={(e) => handleUpdateRole(idx, { rate: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-slate-50/70 border border-slate-200/40 rounded-xl text-xs font-bold text-slate-850 pl-7 focus:ring-1 focus:ring-orange-500/20 focus:border-orange-500/50 focus:bg-white py-2.5 px-3.5 font-mono transition-all"
+                        className="w-full bg-slate-50/70 border border-slate-200/40 rounded-xl text-[11.5px] font-bold text-slate-850 pl-6.5 focus:ring-2 focus:ring-slate-100 focus:border-slate-400 focus:bg-white py-2 px-3 font-mono transition-all"
                         placeholder="0"
                       />
                     </div>
@@ -117,7 +119,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                   {confirmingIdx === idx ? (
                     <div className="flex items-center gap-2 w-full justify-between animate-in fade-in slide-in-from-bottom-1 duration-200">
-                      <span className="text-[9.5px] font-extrabold text-red-600 uppercase tracking-wider select-none">¿Eliminar perfil?</span>
+                      <span className="text-[9.5px] font-extrabold text-red-650 uppercase tracking-wider select-none">¿Eliminar perfil?</span>
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
@@ -140,7 +142,7 @@ export const PerfilesPanel: React.FC<PerfilesPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => setConfirmingIdx(idx)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-55 rounded-xl transition-all"
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                         title="Eliminar Perfil"
                       >
                         <Trash2 size={14} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProjectResource, ProfileRate, ResourceAllocation } from '@/src/types';
-import { Plus, Trash2, Users, ShieldAlert, User, DollarSign, CalendarDays } from 'lucide-react';
+import { Plus, Trash2, Users, ShieldAlert, User, Euro, CalendarDays } from 'lucide-react';
 
 interface EquipoPanelProps {
   resources: ProjectResource[];
@@ -135,7 +135,7 @@ export const EquipoPanel: React.FC<EquipoPanelProps> = ({
 
                     <div className="space-y-0.5">
                       <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 font-display">
-                        <DollarSign size={9} className="text-orange-500" /> Coste Est.
+                        <Euro size={9} className="text-orange-500" /> Coste Est.
                       </div>
                       <div className="text-[11px] font-bold text-slate-850 font-mono whitespace-nowrap">
                         {(allocatedDays * rate).toLocaleString()} €

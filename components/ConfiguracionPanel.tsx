@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import {
   Settings2, Clock, Calendar as CalendarIcon, Eye, Plus, FileSpreadsheet,
-  Download, Upload, Target, DollarSign, ToggleRight, ToggleLeft
+  Download, Upload, Target, Euro, ToggleRight, ToggleLeft
 } from 'lucide-react';
 
 interface ConfiguracionPanelProps {
@@ -248,7 +248,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
             {/* Big budget card */}
             <div className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:scale-110 transition-transform duration-300">
-                <DollarSign size={72} className="text-orange-500" />
+                <Euro size={72} className="text-orange-500" />
               </div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-display">Presupuesto Proyectado Plan de Trabajo</p>
               <div className="text-3xl font-bold text-slate-800 tracking-tight font-mono">
