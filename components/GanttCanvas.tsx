@@ -1461,7 +1461,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                         <div className={`absolute inset-0 px-4 flex items-center justify-between text-[9px] font-black uppercase tracking-wider pointer-events-none w-full truncate ${
                           styles.isChapter || hasSubtasks(task.wbs) ? 'text-white' : 'text-slate-900'
                         }`}>
-                          {barWidth >= 135 || styles.isChapter || hasSubtasks(task.wbs) ? (
+                          {barWidth >= 135 ? (
                             <>
                               <span className="truncate max-w-[80%] pr-2">
                                 {styles.isChapter || hasSubtasks(task.wbs) ? `📂 ${task.name}` : task.name}
@@ -1472,10 +1472,14 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
                         </div>
 
                         {/* Floating Task Label appended to the right of the bar if too narrow */}
-                        {barWidth < 135 && !styles.isChapter && !hasSubtasks(task.wbs) && (
-                          <div className="absolute left-[103%] top-0 bottom-0 flex items-center whitespace-nowrap overflow-visible pointer-events-none select-none z-30">
-                            <span className="text-[9px] font-extrabold text-slate-700 bg-white/90 border border-slate-200/60 px-2 py-0.5 rounded-lg shadow-xs backdrop-blur-xs flex items-center gap-1">
-                              <span>{task.name}</span>
+                        {barWidth < 135 && (
+                          <div className="absolute left-[103%] top-0 bottom-0 flex items-center whitespace-nowrap overflow-visible pointer-events-none select-none z-30 animate-in fade-in duration-300">
+                            <span className={`text-[9.5px] font-black ${
+                              styles.isChapter || hasSubtasks(task.wbs)
+                                ? 'text-slate-900 bg-slate-100/95 border border-slate-350 shadow-sm'
+                                : 'text-slate-700 bg-white/95 border border-slate-200 shadow-xs'
+                            } px-2.5 py-1 rounded-xl flex items-center gap-1.5 backdrop-blur-xs`}>
+                              <span>{styles.isChapter || hasSubtasks(task.wbs) ? `📂 ${task.name}` : task.name}</span>
                               <span className="text-orange-600 font-black">({task.progress}%)</span>
                             </span>
                           </div>
