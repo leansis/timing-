@@ -193,6 +193,7 @@ export default function App() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [footerHeight, setFooterHeight] = useState(380);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -500,29 +501,29 @@ export default function App() {
     }
   };
 
-  const handleDeleteCurrentProject = async () => {
+  const handleDeleteCurrentProject = () => {
     if (!user || !currentProjectId || isClientView) return;
-    if (activeRole !== 'owner') {
-      alert("Solo el propietario del proyecto puede eliminarlo.");
-      return;
-    }
+    if (activeRole !== 'owner') return;
+    setIsDeleteConfirmOpen(true);
+  };
 
-    if (confirm("¿Estás absolutamente seguro de que deseas eliminar este proyecto de la nube? Esta acción es irreversible.")) {
-      setIsSaving(true);
-      try {
-        await deleteProjectFromCloud(user.uid, currentProjectId);
-        const filtered = projects.filter(p => p.id !== currentProjectId);
-        setProjects(filtered);
-        if (filtered.length > 0) {
-          setCurrentProjectId(filtered[0].id);
-        } else {
-          setCurrentProjectId(null);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsSaving(false);
+  const handleConfirmDeleteProject = async () => {
+    if (!user || !currentProjectId || isClientView || activeRole !== 'owner') return;
+    setIsSaving(true);
+    setIsDeleteConfirmOpen(false);
+    try {
+      await deleteProjectFromCloud(user.uid, currentProjectId);
+      const filtered = projects.filter(p => p.id !== currentProjectId);
+      setProjects(filtered);
+      if (filtered.length > 0) {
+        setCurrentProjectId(filtered[0].id);
+      } else {
+        setCurrentProjectId(null);
       }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1205,6 +1206,43 @@ export default function App() {
           await handleAddNewProject(title);
         }}
       />
+
+      {/* Custom Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm select-none animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 md:p-8 flex flex-col items-center text-center gap-5 sm:gap-6">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
+              <Trash2 size={24} />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="font-display font-black text-slate-900 text-sm sm:text-base uppercase tracking-wider">
+                ¿Eliminar Proyecto?
+              </h3>
+              <p className="text-slate-500 text-xs leading-relaxed max-w-xs">
+                ¿Estás absolutamente seguro de que deseas eliminar este proyecto de la nube? Esta acción es irreversible y se perderán todos los datos.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all"
+              >
+                No, Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteProject}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-750 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-md shadow-red-600/10"
+              >
+                Sí, Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

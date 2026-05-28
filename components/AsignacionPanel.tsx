@@ -253,13 +253,13 @@ export const AsignacionPanel: React.FC<AsignacionPanelProps> = ({
         >
           {/* Header row to match the week of Gantt */}
           <div
-            className="flex border-b border-slate-200/80 bg-slate-50/50 sticky top-0 z-30 shrink-0 select-none"
+            className="flex border-b border-slate-350 bg-slate-50 sticky top-0 z-30 shrink-0 select-none"
             style={{ height: HEADER_HEIGHT, width: timelineWidth }}
           >
             {gridColumns.map((col) => (
               <div
                 key={col.index}
-                className="absolute border-r border-slate-200/60 h-full text-center flex flex-col justify-center items-center bg-slate-50 shrink-0"
+                className="absolute border-r border-slate-300 h-full text-center flex flex-col justify-center items-center bg-slate-55 shrink-0"
                 style={{ left: col.left, width: columnWidth }}
               >
                 <span className="text-[10px] font-bold text-slate-700 font-display">{col.label}</span>
@@ -277,7 +277,7 @@ export const AsignacionPanel: React.FC<AsignacionPanelProps> = ({
             {gridColumns.map((col) => (
               <div
                 key={`divider-jornada-${col.index}`}
-                className="absolute border-r border-slate-100/70 h-full pointer-events-none"
+                className="absolute border-r border-slate-200/80 h-full pointer-events-none"
                 style={{ left: col.left, width: columnWidth }}
               />
             ))}
@@ -288,7 +288,7 @@ export const AsignacionPanel: React.FC<AsignacionPanelProps> = ({
               return (
                 <div
                   key={`row-jornada-${res.id}`}
-                  className="absolute w-full flex items-center border-b border-slate-100 hover:bg-slate-50/20"
+                  className="absolute w-full flex items-center border-b border-slate-200/60 hover:bg-slate-50/20"
                   style={{ top: rIndex * ROW_HEIGHT, height: ROW_HEIGHT }}
                 >
                   {gridColumns.map((col) => {

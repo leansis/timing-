@@ -1342,13 +1342,13 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
         >
           {/* Header Horizontal Row (Weeks, Months, etc.) */}
           <div
-            className="flex border-b border-slate-200/80 bg-slate-50/95 backdrop-blur-sm sticky top-0 z-30 shrink-0 select-none"
+            className="flex border-b border-slate-350 bg-slate-50/95 backdrop-blur-sm sticky top-0 z-30 shrink-0 select-none"
             style={{ height: TIMELINE_HEADER_HEIGHT, width: timelineWidth }}
           >
             {gridColumns.map((col) => (
               <div
                 key={col.index}
-                className="absolute border-r border-slate-200 h-full text-center flex flex-col justify-center items-center bg-slate-100/30 shrink-0"
+                className="absolute border-r border-slate-300 h-full text-center flex flex-col justify-center items-center bg-slate-100/30 shrink-0"
                 style={{ left: col.left, width: columnWidth }}
               >
                 <span className="text-[10px] font-semibold text-slate-700 font-display uppercase tracking-wider">{col.label}</span>
@@ -1366,7 +1366,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
             {gridColumns.map((col) => (
               <div
                 key={`divider-${col.index}`}
-                className="absolute border-r border-slate-100 h-full pointer-events-none"
+                className="absolute border-r border-slate-200/80 h-full pointer-events-none"
                 style={{ left: col.left, width: columnWidth }}
               />
             ))}
@@ -1391,7 +1391,7 @@ export const GanttCanvas: React.FC<GanttCanvasProps> = ({
               return (
                 <div
                   key={`bg-row-${task.id}`}
-                  className={`absolute w-full flex items-center border-b border-slate-100 group transition-colors ${isSelected ? 'bg-slate-50/50' : 'hover:bg-slate-50/20'
+                  className={`absolute w-full flex items-center border-b border-slate-200/60 group transition-colors ${isSelected ? 'bg-slate-50/50' : 'hover:bg-slate-50/20'
                     }`}
                   style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}
                 >
